@@ -59,9 +59,6 @@ export const Brands: CollectionConfig = {
       defaultValue: 'INR',
       options: [
         { label: 'INR (₹)', value: 'INR' },
-        { label: 'USD ($)', value: 'USD' },
-        { label: 'EUR ()', value: 'EUR' },
-        { label: 'GBP (£)', value: 'GBP' },
       ],
       admin: {
         description: 'Currency used for all products under this brand.',

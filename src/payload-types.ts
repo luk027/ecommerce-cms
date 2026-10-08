@@ -167,7 +167,7 @@ export interface Brand {
   /**
    * Currency used for all products under this brand.
    */
-  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  currency: 'INR';
   /**
    * Owner user of this brand. Automatically assigned.
    */
@@ -197,14 +197,18 @@ export interface Tag {
    */
   category: string | Category;
   /**
-   * Define attribute labels for this tag. Product editors fill in the actual values per product.
+   * Define attribute labels or attribute groups for this tag. Product editors fill in the actual values per product.
    */
   attributes?:
     | {
         /**
+         * Choose whether this is a single attribute or a group of attributes.
+         */
+        type?: ('single' | 'group') | null;
+        /**
          * Attribute name (e.g. "Screen Size", "Material", "Weight").
          */
-        label: string;
+        label?: string | null;
         /**
          * Optional validation rules for the value entered on the product.
          */
@@ -212,7 +216,7 @@ export interface Tag {
           /**
            * Value type expected when filling this attribute on a product.
            */
-          type?: ('text' | 'number') | null;
+          type?: ('text' | 'number' | 'boolean') | null;
           /**
            * Minimum value (for Number type) or minimum character length (for Text type).
            */
@@ -222,6 +226,39 @@ export interface Tag {
            */
           max?: number | null;
         };
+        /**
+         * Name of the attribute group (e.g. "Dimensions", "Technical Specifications").
+         */
+        groupName?: string | null;
+        /**
+         * Attributes belonging to this group.
+         */
+        items?:
+          | {
+              /**
+               * Attribute name within this group (e.g. "Width", "Height", "Water Resistant").
+               */
+              label: string;
+              /**
+               * Validation rules for this attribute.
+               */
+              validation?: {
+                /**
+                 * Value type expected when filling this attribute on a product.
+                 */
+                type?: ('text' | 'number' | 'boolean') | null;
+                /**
+                 * Minimum value (for Number type) or minimum character length (for Text type).
+                 */
+                min?: number | null;
+                /**
+                 * Maximum value (for Number type) or maximum character length (for Text type).
+                 */
+                max?: number | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -256,7 +293,7 @@ export interface Product {
   /**
    * Inherited from Brand currency.
    */
-  currency?: ('INR' | 'USD' | 'EUR' | 'GBP') | null;
+  currency?: 'INR' | null;
   stockStatus?: ('in_stock' | 'out_of_stock' | 'preorder' | 'discontinued') | null;
   stockQuantity?: number | null;
   /**
@@ -419,6 +456,7 @@ export interface TagsSelect<T extends boolean = true> {
   attributes?:
     | T
     | {
+        type?: T;
         label?: T;
         validation?:
           | T
@@ -426,6 +464,20 @@ export interface TagsSelect<T extends boolean = true> {
               type?: T;
               min?: T;
               max?: T;
+            };
+        groupName?: T;
+        items?:
+          | T
+          | {
+              label?: T;
+              validation?:
+                | T
+                | {
+                    type?: T;
+                    min?: T;
+                    max?: T;
+                  };
+              id?: T;
             };
         id?: T;
       };

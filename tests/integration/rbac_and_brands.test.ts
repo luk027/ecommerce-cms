@@ -11,7 +11,7 @@ describe('RBAC and Brands Integration Tests', () => {
   let userCharlie: any
 
   let brandBobINR: any
-  let brandBobUSD: any
+  let brandBobSecond: any
   let brandCharlie: any
 
   let testCategory: any
@@ -131,21 +131,21 @@ describe('RBAC and Brands Integration Tests', () => {
       expect(brandBobINR.currency).toBe('INR')
     })
 
-    it('user can create multiple brands with different currencies (e.g. USD)', async () => {
-      brandBobUSD = await payload.create({
+    it('user can create multiple brands (all using INR currency)', async () => {
+      brandBobSecond = await payload.create({
         collection: 'brands',
         user: userBob,
         overrideAccess: false,
         data: {
-          name: `Bob Brand USD ${testId}`,
-          details: 'Bob international accessories',
-          currency: 'USD',
+          name: `Bob Second Brand ${testId}`,
+          details: 'Bob accessories',
+          currency: 'INR',
         },
       })
 
-      expect(brandBobUSD.currency).toBe('USD')
+      expect(brandBobSecond.currency).toBe('INR')
       const ownerId =
-        typeof brandBobUSD.owner === 'object' ? brandBobUSD.owner.id : brandBobUSD.owner
+        typeof brandBobSecond.owner === 'object' ? brandBobSecond.owner.id : brandBobSecond.owner
       expect(String(ownerId)).toBe(String(userBob.id))
     })
 
@@ -175,7 +175,7 @@ describe('RBAC and Brands Integration Tests', () => {
 
       const brandIds = bobBrands.docs.map((b) => String(b.id))
       expect(brandIds).toContain(String(brandBobINR.id))
-      expect(brandIds).toContain(String(brandBobUSD.id))
+      expect(brandIds).toContain(String(brandBobSecond.id))
       expect(brandIds).not.toContain(String(brandCharlie.id))
     })
 
@@ -202,7 +202,7 @@ describe('RBAC and Brands Integration Tests', () => {
 
       const brandIds = adminBrands.docs.map((b) => String(b.id))
       expect(brandIds).toContain(String(brandBobINR.id))
-      expect(brandIds).toContain(String(brandBobUSD.id))
+      expect(brandIds).toContain(String(brandBobSecond.id))
       expect(brandIds).toContain(String(brandCharlie.id))
     })
   })
@@ -300,7 +300,7 @@ describe('RBAC and Brands Integration Tests', () => {
 
   describe('Products with Brands and RBAC scoping', () => {
     let productBobINR: any
-    let productBobUSD: any
+    let productBobSecond: any
     let productCharlie: any
 
     it('user product inherits currency from selected INR brand', async () => {
@@ -322,23 +322,23 @@ describe('RBAC and Brands Integration Tests', () => {
       expect(productBobINR.currency).toBe('INR')
     })
 
-    it('user product inherits currency from selected USD brand', async () => {
-      productBobUSD = await payload.create({
+    it('user product inherits currency from second brand', async () => {
+      productBobSecond = await payload.create({
         collection: 'products',
         user: userBob,
         overrideAccess: false,
         data: {
-          title: `Bob USD Product ${testId}`,
-          sku: `SKU-BOB-USD-${testId}`,
+          title: `Bob Second Product ${testId}`,
+          sku: `SKU-BOB-SEC-${testId}`,
           category: testCategory.id,
-          brand: brandBobUSD.id,
-          sellingPrice: 49,
-          mrp: 59,
+          brand: brandBobSecond.id,
+          sellingPrice: 499,
+          mrp: 599,
           status: 'draft',
         },
       })
 
-      expect(productBobUSD.currency).toBe('USD')
+      expect(productBobSecond.currency).toBe('INR')
     })
 
     it('user cannot assign a product to another user brand', async () => {
@@ -386,7 +386,7 @@ describe('RBAC and Brands Integration Tests', () => {
 
       const productIds = bobProducts.docs.map((p) => String(p.id))
       expect(productIds).toContain(String(productBobINR.id))
-      expect(productIds).toContain(String(productBobUSD.id))
+      expect(productIds).toContain(String(productBobSecond.id))
       expect(productIds).not.toContain(String(productCharlie.id))
     })
 
@@ -400,7 +400,7 @@ describe('RBAC and Brands Integration Tests', () => {
       const productIds = charlieProducts.docs.map((p) => String(p.id))
       expect(productIds).toContain(String(productCharlie.id))
       expect(productIds).not.toContain(String(productBobINR.id))
-      expect(productIds).not.toContain(String(productBobUSD.id))
+      expect(productIds).not.toContain(String(productBobSecond.id))
     })
 
     it('Admin sees all products across all brands and users', async () => {
@@ -412,7 +412,7 @@ describe('RBAC and Brands Integration Tests', () => {
 
       const productIds = adminProducts.docs.map((p) => String(p.id))
       expect(productIds).toContain(String(productBobINR.id))
-      expect(productIds).toContain(String(productBobUSD.id))
+      expect(productIds).toContain(String(productBobSecond.id))
       expect(productIds).toContain(String(productCharlie.id))
     })
 

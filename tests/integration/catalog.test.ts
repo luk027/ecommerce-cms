@@ -183,6 +183,83 @@ describe('Catalog Integration Tests', () => {
 
       await payload.delete({ collection: 'tags', id: tag.id })
     })
+
+    it('creates a tag with boolean attribute and group attributes containing multiple items', async () => {
+      const tag = await payload.create({
+        collection: 'tags',
+        data: {
+          name: `Tag Groups and Boolean ${testId}`,
+          category: categoryAId,
+          attributes: [
+            {
+              type: 'single',
+              label: 'Water Resistant',
+              validation: { type: 'boolean' },
+            },
+            {
+              type: 'group',
+              groupName: 'Display Specifications',
+              items: [
+                { label: 'Resolution', validation: { type: 'text' } },
+                { label: 'Refresh Rate', validation: { type: 'number', min: 30, max: 240 } },
+                { label: 'HDR Enabled', validation: { type: 'boolean' } },
+              ],
+            },
+          ],
+        },
+      })
+
+      expect(tag.id).toBeDefined()
+      expect(tag.attributes).toHaveLength(2)
+      const attrs = tag.attributes as any[]
+      expect(attrs[0].label).toBe('Water Resistant')
+      expect(attrs[0].validation.type).toBe('boolean')
+      expect(attrs[1].groupName).toBe('Display Specifications')
+      expect(attrs[1].items).toHaveLength(3)
+
+      await payload.delete({ collection: 'tags', id: tag.id })
+    })
+
+    it('rejects tag with group attribute that has no items', async () => {
+      await expect(
+        payload.create({
+          collection: 'tags',
+          data: {
+            name: `Tag Empty Group ${testId}`,
+            category: categoryAId,
+            attributes: [
+              {
+                type: 'group',
+                groupName: 'Empty Group',
+                items: [],
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow(/must contain at least one attribute/i)
+    })
+
+    it('rejects tag with duplicate attribute labels inside the same group', async () => {
+      await expect(
+        payload.create({
+          collection: 'tags',
+          data: {
+            name: `Tag Dupe In Group ${testId}`,
+            category: categoryAId,
+            attributes: [
+              {
+                type: 'group',
+                groupName: 'Dimensions',
+                items: [
+                  { label: 'Height', validation: { type: 'number' } },
+                  { label: 'height', validation: { type: 'number' } },
+                ],
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow(/duplicate attribute label/i)
+    })
   })
 
   describe('Product validation & hooks', () => {
@@ -390,23 +467,124 @@ describe('Catalog Integration Tests', () => {
       ).rejects.toThrow(/cannot be empty/i)
     })
 
-    it('rejects product save when a defined tag attribute is missing', async () => {
+    it('validates and saves boolean attributes as true or false strings', async () => {
+      const boolTag = await payload.create({
+        collection: 'tags',
+        data: {
+          name: `Tag Bool Only ${testId}`,
+          category: categoryAId,
+          attributes: [
+            {
+              type: 'single',
+              label: 'Waterproof',
+              validation: { type: 'boolean' },
+            },
+          ],
+        },
+      })
+
+      // Valid boolean 'true'
+      const prod = await payload.create({
+        collection: 'products',
+        data: {
+          title: `Bool Product ${testId}`,
+          sku: `BOOL-PROD-${testId}`,
+          category: categoryAId,
+          tags: [String(boolTag.id)],
+          status: 'draft',
+          attributes: [{ label: 'Waterproof', value: 'true' }],
+        },
+      })
+
+      const stored = prod.attributes as any[]
+      expect(stored).toHaveLength(1)
+      expect(stored[0].label).toBe('Waterproof')
+      expect(stored[0].value).toBe('true')
+
+      // Invalid boolean value
       await expect(
         payload.create({
           collection: 'products',
           data: {
-            title: `Missing Attr Product ${testId}`,
-            sku: `MISS-ATTR-${testId}`,
+            title: `Bad Bool Product ${testId}`,
+            sku: `BAD-BOOL-${testId}`,
             category: categoryAId,
-            tags: [tagAId],
+            tags: [String(boolTag.id)],
+            status: 'draft',
+            attributes: [{ label: 'Waterproof', value: 'invalid-bool' }],
+          },
+        }),
+      ).rejects.toThrow(/must be either "true" or "false"/i)
+
+      await payload.delete({ collection: 'tags', id: boolTag.id })
+    })
+
+    it('validates, saves, and shapes grouped product attributes', async () => {
+      const groupTag = await payload.create({
+        collection: 'tags',
+        data: {
+          name: `Tag Group Hardware ${testId}`,
+          category: categoryAId,
+          attributes: [
+            {
+              type: 'single',
+              label: 'Color',
+              validation: { type: 'text' },
+            },
+            {
+              type: 'group',
+              groupName: 'Dimensions',
+              items: [
+                { label: 'Height', validation: { type: 'number', min: 10 } },
+                { label: 'Width', validation: { type: 'number', min: 10 } },
+              ],
+            },
+          ],
+        },
+      })
+
+      const prod = await payload.create({
+        collection: 'products',
+        data: {
+          title: `Grouped Attr Product ${testId}`,
+          sku: `GROUPED-PROD-${testId}`,
+          category: categoryAId,
+          tags: [String(groupTag.id)],
+          status: 'draft',
+          attributes: [
+            { label: 'Color', value: 'Midnight Blue' },
+            { label: 'Height', value: '150', group: 'Dimensions' },
+            { label: 'Width', value: '75', group: 'Dimensions' },
+          ],
+        },
+      })
+
+      const stored = prod.attributes as any[]
+      expect(stored).toHaveLength(3)
+      expect(stored.find((a) => a.label === 'Height')?.group).toBe('Dimensions')
+      expect(stored.find((a) => a.label === 'Width')?.group).toBe('Dimensions')
+      expect(stored.find((a) => a.label === 'Color')?.group).toBeUndefined()
+
+      // Missing child attribute in group
+      await expect(
+        payload.create({
+          collection: 'products',
+          data: {
+            title: `Missing Group Child ${testId}`,
+            sku: `MISS-CHILD-${testId}`,
+            category: categoryAId,
+            tags: [String(groupTag.id)],
             status: 'draft',
             attributes: [
-              { label: 'Feature', value: 'Smart AI' },
-              // Connectivity is missing!
+              { label: 'Color', value: 'Red' },
+              { label: 'Height', value: '150', group: 'Dimensions' },
+              // Width missing
             ],
           },
         }),
-      ).rejects.toThrow(/cannot be empty/i)
+      ).rejects.toThrow(/Attribute "Dimensions > Width" value cannot be empty/i)
+
+      await payload.delete({ collection: 'tags', id: groupTag.id })
     })
   })
 
@@ -586,6 +764,73 @@ describe('Catalog Integration Tests', () => {
         { label: 'Feature', value: 'Lightweight' },
         { label: 'Material', value: 'Cotton' },
       ])
+    })
+
+    it('handles multi-tag product with single and group attributes (Headphones group, boolean values)', async () => {
+      const tagMulti = await payload.create({
+        collection: 'tags',
+        data: {
+          name: `Tag Headphones Complex ${testId}`,
+          category: categoryAId,
+          attributes: [
+            {
+              type: 'single',
+              label: 'Operating System Support',
+              validation: { type: 'text' },
+            },
+            {
+              type: 'single',
+              label: 'Voice Assistant Compatibility',
+              validation: { type: 'boolean' },
+            },
+            {
+              type: 'group',
+              groupName: 'Headphones',
+              items: [
+                { label: 'RGB', validation: { type: 'boolean' } },
+                { label: 'Wired', validation: { type: 'boolean' } },
+                { label: 'Battery Life', validation: { type: 'text' } },
+              ],
+            },
+          ],
+        },
+      })
+
+      const prod = await payload.create({
+        collection: 'products',
+        data: {
+          title: `Semi-conductor Complex ${testId}`,
+          sku: `SMC-01-${testId}`,
+          category: categoryAId,
+          tags: [String(tagMulti.id)],
+          status: 'draft',
+          attributes: [
+            { label: 'Operating System Support', value: 'NO' },
+            { label: 'Voice Assistant Compatibility', value: 'NO' }, // 'NO' -> normalized to 'false'
+            { label: 'RGB', value: 'true', group: 'Headphones' },
+            { label: 'Wired', value: 'true', group: 'Headphones' },
+            { label: 'Battery Life', value: '10 to 12 Hours', group: 'Headphones' },
+          ],
+        },
+      })
+
+      const storedAttrs = prod.attributes as any[]
+      expect(storedAttrs).toHaveLength(5)
+      expect(storedAttrs.find((a) => a.label === 'Voice Assistant Compatibility')?.value).toBe('false')
+      expect(storedAttrs.find((a) => a.label === 'RGB')?.group).toBe('Headphones')
+      expect(storedAttrs.find((a) => a.label === 'RGB')?.value).toBe('true')
+      expect(storedAttrs.find((a) => a.label === 'Battery Life')?.value).toBe('10 to 12 Hours')
+
+      // Test shaping
+      const populatedDoc = {
+        ...prod,
+        tags: [tagMulti],
+      }
+      const listing = shapeListingProduct(populatedDoc)
+      expect(listing?.attributes).toHaveLength(5)
+      expect(listing?.attributes.find((a: any) => a.label === 'RGB')?.group).toBe('Headphones')
+
+      await payload.delete({ collection: 'tags', id: tagMulti.id })
     })
   })
 })

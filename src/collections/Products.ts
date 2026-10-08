@@ -178,9 +178,6 @@ export const Products: CollectionConfig = {
           defaultValue: 'INR',
           options: [
             { label: 'INR (₹)', value: 'INR' },
-            { label: 'USD ($)', value: 'USD' },
-            { label: 'EUR (€)', value: 'EUR' },
-            { label: 'GBP (£)', value: 'GBP' },
           ],
           admin: {
             width: '33%',
@@ -362,104 +359,192 @@ export const Products: CollectionConfig = {
         }
 
         // 6. Collect unique labels from the selected tags (first-wins deduplication)
-        const validLabelMap = new Map<string, { label: string; validation: any }>()
+        const validLabelMap = new Map<string, { label: string; group?: string; validation: any }>()
+        const tagAttrByLabel = new Map<string, { label: string; group?: string; validation: any }>()
+
         for (const tagDoc of tagDocs) {
           if (!Array.isArray(tagDoc.attributes)) continue
           for (const attr of tagDoc.attributes) {
-            if (!attr?.label) continue
-            const trimmedLabel = attr.label.trim()
-            const normalized = normalizeLabel(trimmedLabel)
-            if (!validLabelMap.has(normalized)) {
-              validLabelMap.set(normalized, {
+            if (!attr) continue
+            if (attr.type === 'group' || (attr.groupName && Array.isArray(attr.items))) {
+              const groupName = (attr.groupName || '').trim()
+              if (Array.isArray(attr.items)) {
+                for (const item of attr.items) {
+                  if (!item?.label) continue
+                  const trimmedLabel = item.label.trim()
+                  const key = groupName
+                    ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
+                    : normalizeLabel(trimmedLabel)
+                  const def = {
+                    label: trimmedLabel,
+                    group: groupName || undefined,
+                    validation: item.validation || {},
+                  }
+                  if (!validLabelMap.has(key)) {
+                    validLabelMap.set(key, def)
+                  }
+                  if (!tagAttrByLabel.has(normalizeLabel(trimmedLabel))) {
+                    tagAttrByLabel.set(normalizeLabel(trimmedLabel), def)
+                  }
+                }
+              }
+            } else {
+              if (!attr.label) continue
+              const trimmedLabel = attr.label.trim()
+              const key = normalizeLabel(trimmedLabel)
+              const def = {
                 label: trimmedLabel,
+                group: undefined,
                 validation: attr.validation || {},
-              })
+              }
+              if (!validLabelMap.has(key)) {
+                validLabelMap.set(key, def)
+              }
+              if (!tagAttrByLabel.has(key)) {
+                tagAttrByLabel.set(key, def)
+              }
             }
           }
         }
 
         // 7. Filter product attributes to only include labels that exist in the current tags.
         //    Strip any orphaned labels (from tags that were removed).
-        const incomingAttrs: { label: string; value: string; id?: string }[] = Array.isArray(
+        const incomingAttrs: { label: string; value: any; group?: string; id?: string }[] = Array.isArray(
           data.attributes,
         )
           ? data.attributes
           : []
 
-        const filteredAttrs = incomingAttrs.filter((attr) => {
-          if (!attr?.label) return false
-          const normalized = normalizeLabel(attr.label.trim())
-          return validLabelMap.has(normalized)
-        })
+        const filteredAttrs = incomingAttrs
+          .filter((attr) => {
+            if (!attr?.label) return false
+            const trimmedLabel = attr.label.trim()
+            const groupName = attr.group?.trim()
+            const key = groupName
+              ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
+              : normalizeLabel(trimmedLabel)
+            return validLabelMap.has(key) || tagAttrByLabel.has(normalizeLabel(trimmedLabel))
+          })
+          .map((attr) => {
+            const trimmedLabel = attr.label.trim()
+            const groupName = attr.group?.trim()
+            const key = groupName
+              ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
+              : normalizeLabel(trimmedLabel)
+            const matchedTagAttr = validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
+            return {
+              ...attr,
+              label: matchedTagAttr?.label || trimmedLabel,
+              group: matchedTagAttr?.group || groupName || undefined,
+            }
+          })
 
         // 8. If attributes are provided for tags with attribute definitions, all defined attributes must have non-empty values
         if (validLabelMap.size > 0 && filteredAttrs.length > 0) {
-          for (const [normalized, tagAttr] of validLabelMap.entries()) {
-            const userAttr = filteredAttrs.find(
-              (a) => normalizeLabel((a.label || '').trim()) === normalized,
-            )
+          for (const [key, tagAttr] of validLabelMap.entries()) {
+            const userAttr = filteredAttrs.find((a) => {
+              const aLabel = normalizeLabel((a.label || '').trim())
+              const aGroup = a.group ? normalizeLabel(a.group.trim()) : ''
+              const aKey = aGroup ? `${aGroup}::${aLabel}` : aLabel
+              return aKey === key || aLabel === normalizeLabel(tagAttr.label)
+            })
             const val =
               userAttr?.value !== undefined && userAttr?.value !== null
                 ? String(userAttr.value).trim()
                 : ''
             if (!val) {
-              throw new Error(`Attribute "${tagAttr.label}" value cannot be empty.`)
+              const displayLabel = tagAttr.group ? `${tagAttr.group} > ${tagAttr.label}` : tagAttr.label
+              throw new Error(`Attribute "${displayLabel}" value cannot be empty.`)
             }
           }
         }
 
         // 9. Validate each attribute value against its tag-defined validation rules
         for (const attr of filteredAttrs) {
-          const normalized = normalizeLabel(attr.label.trim())
-          const tagAttr = validLabelMap.get(normalized)
+          const trimmedLabel = attr.label.trim()
+          const groupName = attr.group?.trim()
+          const key = groupName
+            ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
+            : normalizeLabel(trimmedLabel)
+          const tagAttr = validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
           if (!tagAttr) continue
 
-          const val = String(attr.value || '').trim()
-          if (!val) {
-            throw new Error(`Attribute "${attr.label}" value cannot be empty.`)
+          const rawVal = String(attr.value ?? '').trim()
+          const displayLabel = tagAttr.group ? `${tagAttr.group} > ${tagAttr.label}` : tagAttr.label
+          if (!rawVal) {
+            throw new Error(`Attribute "${displayLabel}" value cannot be empty.`)
           }
 
           const { validation } = tagAttr
           const valType = validation?.type || 'text'
 
-          if (valType === 'number') {
-            const numVal = Number(val)
+          if (valType === 'boolean') {
+            const lower = rawVal.toLowerCase()
+            const boolNorm =
+              lower === 'true' || lower === 'yes' || lower === '1'
+                ? 'true'
+                : lower === 'false' || lower === 'no' || lower === '0'
+                  ? 'false'
+                  : null
+
+            if (!boolNorm) {
+              throw new Error(`Attribute "${displayLabel}" must be either "true" or "false".`)
+            }
+            attr.value = boolNorm
+          } else if (valType === 'number') {
+            const numVal = Number(rawVal)
             if (isNaN(numVal)) {
-              throw new Error(`Attribute "${attr.label}" must be a number.`)
+              throw new Error(`Attribute "${displayLabel}" must be a number.`)
             }
             if (typeof validation?.min === 'number' && numVal < validation.min) {
               throw new Error(
-                `Attribute "${attr.label}" value (${numVal}) is below the minimum allowed (${validation.min}).`,
+                `Attribute "${displayLabel}" value (${numVal}) is below the minimum allowed (${validation.min}).`,
               )
             }
             if (typeof validation?.max === 'number' && numVal > validation.max) {
               throw new Error(
-                `Attribute "${attr.label}" value (${numVal}) exceeds the maximum allowed (${validation.max}).`,
+                `Attribute "${displayLabel}" value (${numVal}) exceeds the maximum allowed (${validation.max}).`,
               )
             }
           } else {
             // text validation
-            if (typeof validation?.min === 'number' && val.length < validation.min) {
+            if (typeof validation?.min === 'number' && rawVal.length < validation.min) {
               throw new Error(
-                `Attribute "${attr.label}" value must be at least ${validation.min} characters.`,
+                `Attribute "${displayLabel}" value must be at least ${validation.min} characters.`,
               )
             }
-            if (typeof validation?.max === 'number' && val.length > validation.max) {
+            if (typeof validation?.max === 'number' && rawVal.length > validation.max) {
               throw new Error(
-                `Attribute "${attr.label}" value must not exceed ${validation.max} characters.`,
+                `Attribute "${displayLabel}" value must not exceed ${validation.max} characters.`,
               )
             }
           }
         }
 
-        // 9. Deduplicate attribute labels on the product (keep first occurrence per label)
-        const seenAttrLabels = new Set<string>()
-        const deduplicatedAttrs = filteredAttrs.filter((attr) => {
-          const normalized = normalizeLabel(attr.label.trim())
-          if (seenAttrLabels.has(normalized)) return false
-          seenAttrLabels.add(normalized)
-          return true
-        })
+        // Deduplicate attribute entries on the product (keep first occurrence per group+label)
+        const seenAttrKeys = new Set<string>()
+        const deduplicatedAttrs = filteredAttrs
+          .map((attr) => {
+            const trimmedLabel = attr.label.trim()
+            const groupName = attr.group?.trim()
+            const key = groupName
+              ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
+              : normalizeLabel(trimmedLabel)
+            const tagAttr = validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
+            return {
+              label: tagAttr?.label || trimmedLabel,
+              value: String(attr.value ?? '').trim(),
+              ...(tagAttr?.group ? { group: tagAttr.group } : groupName ? { group: groupName } : {}),
+            }
+          })
+          .filter((attr) => {
+            const key = attr.group
+              ? `${normalizeLabel(attr.group)}::${normalizeLabel(attr.label)}`
+              : normalizeLabel(attr.label)
+            if (seenAttrKeys.has(key)) return false
+            seenAttrKeys.add(key)
+            return true
+          })
 
         data.attributes = deduplicatedAttrs
 

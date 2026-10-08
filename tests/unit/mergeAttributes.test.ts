@@ -50,6 +50,52 @@ describe('mergeTagAttributeDefs', () => {
     expect(result).toHaveLength(1)
     expect(result[0].label).toBe('Feature')
   })
+
+  it('supports boolean validation type and group attributes with multiple label-values', () => {
+    const tag = {
+      id: 'tag-groups',
+      name: 'Tech Specs',
+      attributes: [
+        {
+          type: 'single',
+          label: 'Bluetooth Enabled',
+          validation: { type: 'boolean' },
+        },
+        {
+          type: 'group',
+          groupName: 'Dimensions',
+          items: [
+            { label: 'Height', validation: { type: 'number', min: 0 } },
+            { label: 'Width', validation: { type: 'number', min: 0 } },
+            { label: 'Waterproof', validation: { type: 'boolean' } },
+          ],
+        },
+      ],
+    }
+
+    const result = mergeTagAttributeDefs([tag])
+    expect(result).toHaveLength(4)
+    expect(result[0]).toEqual({
+      label: 'Bluetooth Enabled',
+      group: undefined,
+      validation: { type: 'boolean' },
+    })
+    expect(result[1]).toEqual({
+      label: 'Height',
+      group: 'Dimensions',
+      validation: { type: 'number', min: 0 },
+    })
+    expect(result[2]).toEqual({
+      label: 'Width',
+      group: 'Dimensions',
+      validation: { type: 'number', min: 0 },
+    })
+    expect(result[3]).toEqual({
+      label: 'Waterproof',
+      group: 'Dimensions',
+      validation: { type: 'boolean' },
+    })
+  })
 })
 
 describe('mergeProductAttributes', () => {
@@ -106,6 +152,41 @@ describe('mergeProductAttributes', () => {
     expect(result).toEqual([
       { label: 'Feature', value: 'Lightweight' },
       { label: 'Material', value: 'Cotton' },
+    ])
+  })
+
+  it('preserves and assigns group attribute names on product attributes', () => {
+    const tagGroup = {
+      id: 'tag-group-1',
+      name: 'Hardware',
+      attributes: [
+        {
+          type: 'group',
+          groupName: 'Dimensions',
+          items: [
+            { label: 'Height', validation: { type: 'number' } },
+            { label: 'Width', validation: { type: 'number' } },
+          ],
+        },
+        {
+          type: 'single',
+          label: 'Is Wireless',
+          validation: { type: 'boolean' },
+        },
+      ],
+    }
+
+    const productAttrs = [
+      { label: 'Height', value: '150', group: 'Dimensions' },
+      { label: 'Width', value: '70' }, // Missing group in product input, filled by tag definition
+      { label: 'Is Wireless', value: 'true' },
+    ]
+
+    const result = mergeProductAttributes(productAttrs, [tagGroup])
+    expect(result).toEqual([
+      { label: 'Height', value: '150', group: 'Dimensions' },
+      { label: 'Width', value: '70', group: 'Dimensions' },
+      { label: 'Is Wireless', value: 'true' },
     ])
   })
 })
