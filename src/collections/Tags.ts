@@ -77,16 +77,20 @@ export const Tags: CollectionConfig = {
               name: 'min',
               type: 'number',
               admin: {
-                description: 'Minimum value (for Number type) or minimum character length (for Text type).',
-                condition: (_, siblingData) => siblingData?.type === 'number' || siblingData?.type === 'text',
+                description:
+                  'Minimum value (for Number type) or minimum character length (for Text type).',
+                condition: (_, siblingData) =>
+                  siblingData?.type === 'number' || siblingData?.type === 'text',
               },
             },
             {
               name: 'max',
               type: 'number',
               admin: {
-                description: 'Maximum value (for Number type) or maximum character length (for Text type).',
-                condition: (_, siblingData) => siblingData?.type === 'number' || siblingData?.type === 'text',
+                description:
+                  'Maximum value (for Number type) or maximum character length (for Text type).',
+                condition: (_, siblingData) =>
+                  siblingData?.type === 'number' || siblingData?.type === 'text',
               },
             },
           ],
@@ -123,7 +127,7 @@ export const Tags: CollectionConfig = {
           const conflict = existing.docs.find(
             (doc) =>
               String(doc.id) !== String(docId) &&
-              doc.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+              doc.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
           )
 
           if (conflict) {
@@ -132,7 +136,11 @@ export const Tags: CollectionConfig = {
         }
 
         // Backward compatibility: if data has legacy categories array but no category, migrate it
-        if (!data.category && Array.isArray((data as any).categories) && (data as any).categories.length > 0) {
+        if (
+          !data.category &&
+          Array.isArray((data as any).categories) &&
+          (data as any).categories.length > 0
+        ) {
           data.category = (data as any).categories[0]
         }
 
@@ -166,7 +174,7 @@ export const Tags: CollectionConfig = {
               if (typeof validation.min === 'number' && typeof validation.max === 'number') {
                 if (validation.min > validation.max) {
                   throw new Error(
-                    `Attribute "${label}": min (${validation.min}) cannot be greater than max (${validation.max}).`
+                    `Attribute "${label}": min (${validation.min}) cannot be greater than max (${validation.max}).`,
                   )
                 }
               }
@@ -175,7 +183,7 @@ export const Tags: CollectionConfig = {
             const normalized = normalizeLabel(label)
             if (seenLabels.has(normalized)) {
               throw new Error(
-                `Duplicate attribute label "${label}" in tag. Labels must be unique within a tag.`
+                `Duplicate attribute label "${label}" in tag. Labels must be unique within a tag.`,
               )
             }
             seenLabels.add(normalized)
@@ -194,7 +202,9 @@ export const Tags: CollectionConfig = {
               : String(previousDoc.category)
             : Array.isArray((previousDoc as any).categories) && (previousDoc as any).categories[0]
               ? typeof (previousDoc as any).categories[0] === 'object'
-                ? String((previousDoc as any).categories[0].id || (previousDoc as any).categories[0]._id)
+                ? String(
+                    (previousDoc as any).categories[0].id || (previousDoc as any).categories[0]._id,
+                  )
                 : String((previousDoc as any).categories[0])
               : null
 

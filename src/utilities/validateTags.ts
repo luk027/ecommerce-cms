@@ -16,7 +16,7 @@ export type TagWithCategories = TagWithCategory
  */
 export function validateProductTags(
   tags: (TagWithCategory | string | null | undefined)[] | null | undefined,
-  categoryId: string
+  categoryId: string,
 ): string[] {
   if (!Array.isArray(tags) || tags.length === 0 || !categoryId) {
     return []
@@ -37,7 +37,10 @@ export function validateProductTags(
 
     // 1. Check single category relationship
     if (tag.category) {
-      const catId = typeof tag.category === 'object' ? String(tag.category.id || (tag.category as any)._id) : String(tag.category)
+      const catId =
+        typeof tag.category === 'object'
+          ? String(tag.category.id || (tag.category as any)._id)
+          : String(tag.category)
       if (catId === targetCategoryId) {
         matches = true
       }

@@ -3,10 +3,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 import { shapeDetailProduct } from '@/utilities/shapeProduct'
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ slug: string }> | { slug: string } }
-) {
+export async function GET(req: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
     const params = await context.params
     const slug = params?.slug
@@ -41,9 +38,6 @@ export async function GET(
 
     return NextResponse.json(shaped)
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch product' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || 'Failed to fetch product' }, { status: 500 })
   }
 }

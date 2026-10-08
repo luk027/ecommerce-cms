@@ -2,7 +2,7 @@ import type { Payload } from 'payload'
 
 export async function resolveUserBrandIds(
   payload: Payload,
-  userId: string | number
+  userId: string | number,
 ): Promise<string[]> {
   try {
     const brands = await payload.find({

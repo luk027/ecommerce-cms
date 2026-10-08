@@ -1,6 +1,7 @@
 # Project Guidelines & Architecture
 
 ## Overview
+
 This project is an E-commerce CMS built with **Payload CMS 3.x**, **Next.js (App Router)**, and **MongoDB**.
 
 This project uses the Payload CMS skill at `.claude/skills/payload/`.
@@ -38,10 +39,12 @@ ecommerce-cms/
 ## Code Conventions & Best Practices
 
 ### 1. Simplicity & Scalability
+
 - Prefer simple, direct, readable implementations over complex abstractions or deep inheritance layers.
 - Avoid unnecessary wrapper functions or premature architectural bloat.
 
 ### 2. File Placement Rules
+
 - **Access Control (`src/access/`)**: All reusable access control functions for collections and fields belong here.
 - **Collections (`src/collections/`)**: Keep collection configurations modular and clean. Reusable access control belongs in `src/access/`, and business logic helpers belong in `src/utilities/`.
 - **Utilities (`src/utilities/`)**: Generic and catalog-specific helpers (e.g. data normalization, discount calculations, product payload shaping) must be pure functions where possible.
@@ -49,15 +52,16 @@ ecommerce-cms/
 - **Components (`src/components/`)**: Custom UI components and admin field components belong here.
 
 ### 3. Imports & Aliases
+
 - Use the `@/*` alias for all imports mapped to `src/*` (e.g., `import { isAdmin } from '@/access/isAdmin'`, `import { normalizeLabel } from '@/utilities/normalize'`).
 
 ### 4. Testing & Verification
+
 - Test all pure utilities with unit tests under `tests/unit/`.
 - Test collection lifecycle hooks, access control, and API responses under `tests/integration/`.
 - Run tests via `npm run test:int` and verify types with `npx tsc --noEmit`.
 
 ---
-
 
 <!-- BEGIN:nextjs-agent-rules -->
 

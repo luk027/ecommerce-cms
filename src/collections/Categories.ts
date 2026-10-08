@@ -48,7 +48,9 @@ export const Categories: CollectionConfig = {
 
           const docId = originalDoc?.id || (data as any)?.id
           const conflict = existing.docs.find(
-            (doc) => String(doc.id) !== String(docId) && doc.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+            (doc) =>
+              String(doc.id) !== String(docId) &&
+              doc.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
           )
 
           if (conflict) {
@@ -74,7 +76,7 @@ export const Categories: CollectionConfig = {
 
         if (productsCount.totalDocs > 0) {
           throw new Error(
-            `Cannot delete category: it is referenced by ${productsCount.totalDocs} product(s).`
+            `Cannot delete category: it is referenced by ${productsCount.totalDocs} product(s).`,
           )
         }
 
@@ -90,7 +92,7 @@ export const Categories: CollectionConfig = {
 
         if (tagsCount.totalDocs > 0) {
           throw new Error(
-            `Cannot delete category: it is referenced by ${tagsCount.totalDocs} tag(s).`
+            `Cannot delete category: it is referenced by ${tagsCount.totalDocs} tag(s).`,
           )
         }
       },

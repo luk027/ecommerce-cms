@@ -107,7 +107,7 @@ describe('Catalog Integration Tests', () => {
         payload.create({
           collection: 'categories',
           data: { name: `test electronics ${testId}` },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -116,7 +116,7 @@ describe('Catalog Integration Tests', () => {
         payload.delete({
           collection: 'categories',
           id: categoryAId,
-        })
+        }),
       ).rejects.toThrow(/referenced by/i)
     })
   })
@@ -130,7 +130,7 @@ describe('Catalog Integration Tests', () => {
             name: `Tag No Cat ${testId}`,
             category: '' as any,
           },
-        })
+        }),
       ).rejects.toThrow(/associated with a category/i)
     })
 
@@ -146,7 +146,7 @@ describe('Catalog Integration Tests', () => {
               { label: 'color  ' }, // normalized duplicate
             ],
           },
-        })
+        }),
       ).rejects.toThrow(/duplicate attribute label/i)
     })
 
@@ -157,11 +157,9 @@ describe('Catalog Integration Tests', () => {
           data: {
             name: `Tag Bad Validation ${testId}`,
             category: categoryAId,
-            attributes: [
-              { label: 'Weight', validation: { type: 'number', min: 100, max: 10 } },
-            ],
+            attributes: [{ label: 'Weight', validation: { type: 'number', min: 100, max: 10 } }],
           },
-        })
+        }),
       ).rejects.toThrow(/min.*cannot be greater than max/i)
     })
 
@@ -215,7 +213,7 @@ describe('Catalog Integration Tests', () => {
             tags: [tagBId],
             status: 'draft',
           },
-        })
+        }),
       ).rejects.toThrow(/do not belong to the selected category/i)
     })
 
@@ -240,7 +238,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             category: categoryBId,
           },
-        })
+        }),
       ).rejects.toThrow(/do not belong to the selected category/i)
     })
 
@@ -254,7 +252,7 @@ describe('Catalog Integration Tests', () => {
             category: categoryAId,
             status: 'active',
           },
-        })
+        }),
       ).rejects.toThrow(/Cannot publish product/i)
     })
 
@@ -333,7 +331,7 @@ describe('Catalog Integration Tests', () => {
             status: 'draft',
             attributes: [{ label: 'Weight', value: 'not-a-number' }],
           },
-        })
+        }),
       ).rejects.toThrow(/must be a number/i)
 
       await payload.delete({ collection: 'tags', id: numTag.id })
@@ -388,7 +386,7 @@ describe('Catalog Integration Tests', () => {
               { label: 'Connectivity', value: 'WiFi 6' },
             ],
           },
-        })
+        }),
       ).rejects.toThrow(/cannot be empty/i)
     })
 
@@ -407,7 +405,7 @@ describe('Catalog Integration Tests', () => {
               // Connectivity is missing!
             ],
           },
-        })
+        }),
       ).rejects.toThrow(/cannot be empty/i)
     })
   })
@@ -451,7 +449,7 @@ describe('Catalog Integration Tests', () => {
       })
 
       const remainingTagIds = (updatedProd.tags as any[]).map((t) =>
-        typeof t === 'object' ? String(t.id) : String(t)
+        typeof t === 'object' ? String(t.id) : String(t),
       )
       expect(remainingTagIds).toEqual([tagAId])
       expect(remainingTagIds).not.toContain(String(tempTag.id))
@@ -495,7 +493,7 @@ describe('Catalog Integration Tests', () => {
         id: prodA.id,
       })
       const prodATags = (updatedProdA.tags as any[]).map((t) =>
-        typeof t === 'object' ? String(t.id) : String(t)
+        typeof t === 'object' ? String(t.id) : String(t),
       )
       expect(prodATags).not.toContain(String(movableTag.id))
 

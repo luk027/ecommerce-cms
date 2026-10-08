@@ -102,7 +102,6 @@ export async function GET(req: NextRequest) {
         })
       }
 
-
       if (matchedTagIds.length > 0) {
         orSearchClauses.push({
           tags: {
@@ -150,7 +149,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch products' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

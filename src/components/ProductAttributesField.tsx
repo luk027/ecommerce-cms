@@ -43,7 +43,8 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
       for (const def of availableDefs) {
         const norm = normalizeLabel(def.label)
         const item = list.find((a) => normalizeLabel(a?.label || '') === norm)
-        const valStr = item?.value !== undefined && item?.value !== null ? String(item.value).trim() : ''
+        const valStr =
+          item?.value !== undefined && item?.value !== null ? String(item.value).trim() : ''
 
         if (!valStr) {
           return `Attribute "${def.label}" cannot be empty.`
@@ -71,10 +72,15 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
 
       return true
     },
-    [availableDefs]
+    [availableDefs],
   )
 
-  const { value: fieldValue, setValue, showError, errorMessage } = useField({
+  const {
+    value: fieldValue,
+    setValue,
+    showError,
+    errorMessage,
+  } = useField({
     path,
     validate: validateField,
   })
@@ -122,7 +128,7 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
       if (item?.label) {
         valueMap.set(
           normalizeLabel(item.label),
-          item.value !== undefined && item.value !== null ? String(item.value) : ''
+          item.value !== undefined && item.value !== null ? String(item.value) : '',
         )
       }
     }
@@ -251,7 +257,8 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
               color: 'var(--theme-elevation-500, #999999)',
             }}
           >
-            These attributes are required by the selected tags. You must enter a value for each attribute before saving.
+            These attributes are required by the selected tags. You must enter a value for each
+            attribute before saving.
           </p>
         </div>
       </div>
@@ -372,9 +379,9 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
                   disabled={props.readOnly}
                   value={currentVal}
                   placeholder={`Enter ${def.label}...`}
-                  min={valType === 'number' ? validation.min ?? undefined : undefined}
-                  max={valType === 'number' ? validation.max ?? undefined : undefined}
-                  maxLength={valType === 'text' ? validation.max ?? undefined : undefined}
+                  min={valType === 'number' ? (validation.min ?? undefined) : undefined}
+                  max={valType === 'number' ? (validation.max ?? undefined) : undefined}
+                  maxLength={valType === 'text' ? (validation.max ?? undefined) : undefined}
                   onBlur={() => {
                     setTouched((prev) => ({ ...prev, [norm]: true }))
                   }}

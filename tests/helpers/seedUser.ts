@@ -7,8 +7,6 @@ export const testUser = {
   role: 'admin' as const,
 }
 
-
-
 /**
  * Seeds a test user for e2e admin tests.
  */

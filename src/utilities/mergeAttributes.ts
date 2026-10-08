@@ -27,7 +27,7 @@ export interface TagDocLike {
  * Unresolved / null tag references and empty attribute lists are handled safely.
  */
 export function mergeTagAttributeDefs(
-  tags?: (TagDocLike | string | null | undefined)[] | null
+  tags?: (TagDocLike | string | null | undefined)[] | null,
 ): TagAttributeDef[] {
   if (!Array.isArray(tags) || tags.length === 0) {
     return []
@@ -77,7 +77,7 @@ export function mergeTagAttributeDefs(
  */
 export function mergeProductAttributes(
   productAttributes?: ProductAttribute[] | null,
-  tags?: (TagDocLike | string | null | undefined)[] | null
+  tags?: (TagDocLike | string | null | undefined)[] | null,
 ): ProductAttribute[] {
   if (!Array.isArray(productAttributes) || productAttributes.length === 0) {
     return []
@@ -88,7 +88,7 @@ export function mergeProductAttributes(
   }
 
   const validLabels = new Set<string>(
-    mergeTagAttributeDefs(tags).map((a) => normalizeLabel(a.label))
+    mergeTagAttributeDefs(tags).map((a) => normalizeLabel(a.label)),
   )
 
   return productAttributes.filter((attr) => {

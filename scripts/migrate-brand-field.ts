@@ -46,7 +46,10 @@ export async function migrateBrandField(): Promise<void> {
     if (!brandStr) continue
 
     // Check if brandStr is already a valid ObjectId
-    if (mongoose.Types.ObjectId.isValid(brandStr) && String(new mongoose.Types.ObjectId(brandStr)) === brandStr) {
+    if (
+      mongoose.Types.ObjectId.isValid(brandStr) &&
+      String(new mongoose.Types.ObjectId(brandStr)) === brandStr
+    ) {
       // Already an ObjectId string, convert to ObjectId type if needed
       await payload.db.connection
         .collection('products')

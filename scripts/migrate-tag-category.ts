@@ -12,10 +12,9 @@ async function main() {
   let updated = 0
   for (const tag of tags) {
     if (!tag.category && tag.categories && tag.categories.length > 0) {
-      await db.collection('tags').updateOne(
-        { _id: tag._id },
-        { $set: { category: tag.categories[0] } }
-      )
+      await db
+        .collection('tags')
+        .updateOne({ _id: tag._id }, { $set: { category: tag.categories[0] } })
       updated++
     }
   }

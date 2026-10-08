@@ -31,7 +31,10 @@ export const taxonomyData: CategorySeed[] = [
           { label: 'Skin Type', validation: { type: 'text' } },
           { label: 'Volume (ml)', validation: { type: 'number', min: 1, max: 2000 } },
           { label: 'Key Ingredient', validation: { type: 'text' } },
-          { label: 'Sun Protection Factor (SPF)', validation: { type: 'number', min: 0, max: 100 } },
+          {
+            label: 'Sun Protection Factor (SPF)',
+            validation: { type: 'number', min: 0, max: 100 },
+          },
         ],
       },
       {
@@ -161,7 +164,10 @@ export const taxonomyData: CategorySeed[] = [
         attributes: [
           { label: 'Movement Type', validation: { type: 'text' } },
           { label: 'Dial Diameter (mm)', validation: { type: 'number', min: 20, max: 60 } },
-          { label: 'Water Resistance Depth (m)', validation: { type: 'number', min: 0, max: 1000 } },
+          {
+            label: 'Water Resistance Depth (m)',
+            validation: { type: 'number', min: 0, max: 1000 },
+          },
           { label: 'Strap Material', validation: { type: 'text' } },
         ],
       },
@@ -520,7 +526,10 @@ export const authenticProducts: SeedProductInput[] = [
       { label: 'Compatible Phone Model', value: 'Universal iOS and Android' },
       { label: 'Material', value: 'Soft Fit Synthetic Leather & Recycled ABS' },
       { label: 'Drop Protection Rating', value: 'Hard Shell Carrying Case Included' },
-      { label: 'Special Features', value: 'Multipoint Connection, Speak-to-Chat, LDAC Hi-Res Audio' },
+      {
+        label: 'Special Features',
+        value: 'Multipoint Connection, Speak-to-Chat, LDAC Hi-Res Audio',
+      },
     ],
   },
   {
@@ -648,7 +657,6 @@ export async function resetAndSeed(): Promise<void> {
   }
   console.log(`Cleaned up ${existingBrands.docs.length} brands.`)
 
-
   // 3. Delete all Tags next
   console.log('\n--- Cleaning up Tags ---')
   const existingTags = await payload.find({
@@ -719,7 +727,9 @@ export async function resetAndSeed(): Promise<void> {
       })
       const tagId = String(createdTag.id)
       createdTagMap.set(tagItem.name, tagId)
-      console.log(`  ΓööΓöÇ [Tag Created] ${tagItem.name} (${tagItem.attributes.length} attributes, ID: ${tagId})`)
+      console.log(
+        `  ΓööΓöÇ [Tag Created] ${tagItem.name} (${tagItem.attributes.length} attributes, ID: ${tagId})`,
+      )
     }
   }
 
@@ -790,7 +800,9 @@ export async function resetAndSeed(): Promise<void> {
       },
     })
 
-    console.log(`Γ£ö [Product Created] ${createdProduct.title} (SKU: ${createdProduct.sku}, ID: ${createdProduct.id})`)
+    console.log(
+      `Γ£ö [Product Created] ${createdProduct.title} (SKU: ${createdProduct.sku}, ID: ${createdProduct.id})`,
+    )
   }
 
   // 9. Final Count Verification
