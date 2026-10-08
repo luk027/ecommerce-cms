@@ -22,7 +22,7 @@ export async function GET() {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch categories' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

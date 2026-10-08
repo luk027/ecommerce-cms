@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeTagAttributeDefs, mergeProductAttributes } from '@/lib/catalog/mergeAttributes'
+import { mergeTagAttributeDefs, mergeProductAttributes } from '@/utilities/mergeAttributes'
 
 describe('mergeTagAttributeDefs', () => {
   it('returns empty array when input is null, undefined, or empty', () => {

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, isAdminField } from '../lib/access/isAdmin'
+import { isAdmin, isAdminField } from '../access/isAdmin'
 
 export const Brands: CollectionConfig = {
   slug: 'brands',
@@ -114,7 +114,7 @@ export const Brands: CollectionConfig = {
 
         if (productsCount.totalDocs > 0) {
           throw new Error(
-            'Cannot delete brand: it is referenced by ' + productsCount.totalDocs + ' product(s).'
+            'Cannot delete brand: it is referenced by ' + productsCount.totalDocs + ' product(s).',
           )
         }
       },

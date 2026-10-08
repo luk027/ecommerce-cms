@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateProductTags } from '@/lib/catalog/validateTags'
+import { validateProductTags } from '@/utilities/validateTags'
 
 describe('validateProductTags', () => {
   it('returns empty array when all tags belong to product category (single category)', () => {
@@ -15,7 +15,11 @@ describe('validateProductTags', () => {
   it('supports legacy categories array for backward compatibility', () => {
     const tags = [
       { id: 'tag-1', name: 'Smart TV', categories: ['cat-electronics'] },
-      { id: 'tag-2', name: '4K Display', categories: [{ id: 'cat-electronics' }, { id: 'cat-gadgets' }] },
+      {
+        id: 'tag-2',
+        name: '4K Display',
+        categories: [{ id: 'cat-electronics' }, { id: 'cat-gadgets' }],
+      },
     ]
 
     const offending = validateProductTags(tags, 'cat-electronics')

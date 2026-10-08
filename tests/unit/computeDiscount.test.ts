@@ -1,5 +1,5 @@
-﻿import { describe, it, expect } from 'vitest'
-import { computeDiscount } from '@/lib/catalog/computeDiscount'
+import { describe, it, expect } from 'vitest'
+import { computeDiscount } from '@/utilities/computeDiscount'
 
 describe('computeDiscount', () => {
   it('correctly calculates rounded discount percent when mrp > sellingPrice', () => {

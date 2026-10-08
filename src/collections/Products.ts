@@ -1,8 +1,8 @@
 import type { CollectionConfig, Where } from 'payload'
-import { slugify, normalizeLabel } from '../lib/catalog/normalize'
-import { validateProductTags } from '../lib/catalog/validateTags'
-import { computeDiscount } from '../lib/catalog/computeDiscount'
-import { resolveUserBrandIds } from '../lib/access/resolveUserBrandIds'
+import { slugify, normalizeLabel } from '../utilities/normalize'
+import { validateProductTags } from '../utilities/validateTags'
+import { computeDiscount } from '../utilities/computeDiscount'
+import { resolveUserBrandIds } from '../access/resolveUserBrandIds'
 
 export const Products: CollectionConfig = {
   slug: 'products',

@@ -125,7 +125,8 @@ describe('RBAC and Brands Integration Tests', () => {
       })
 
       expect(brandBobINR).toBeDefined()
-      const ownerId = typeof brandBobINR.owner === 'object' ? brandBobINR.owner.id : brandBobINR.owner
+      const ownerId =
+        typeof brandBobINR.owner === 'object' ? brandBobINR.owner.id : brandBobINR.owner
       expect(String(ownerId)).toBe(String(userBob.id))
       expect(brandBobINR.currency).toBe('INR')
     })
@@ -143,7 +144,8 @@ describe('RBAC and Brands Integration Tests', () => {
       })
 
       expect(brandBobUSD.currency).toBe('USD')
-      const ownerId = typeof brandBobUSD.owner === 'object' ? brandBobUSD.owner.id : brandBobUSD.owner
+      const ownerId =
+        typeof brandBobUSD.owner === 'object' ? brandBobUSD.owner.id : brandBobUSD.owner
       expect(String(ownerId)).toBe(String(userBob.id))
     })
 
@@ -159,7 +161,8 @@ describe('RBAC and Brands Integration Tests', () => {
         },
       })
 
-      const ownerId = typeof brandCharlie.owner === 'object' ? brandCharlie.owner.id : brandCharlie.owner
+      const ownerId =
+        typeof brandCharlie.owner === 'object' ? brandCharlie.owner.id : brandCharlie.owner
       expect(String(ownerId)).toBe(String(userCharlie.id))
     })
 
@@ -186,7 +189,7 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             details: 'Hacked by Bob',
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -214,7 +217,7 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             name: `Forbidden Category ${testId}`,
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -228,7 +231,7 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             name: `Renamed Category ${testId}`,
           },
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -239,7 +242,7 @@ describe('RBAC and Brands Integration Tests', () => {
           id: testCategory.id,
           user: userBob,
           overrideAccess: false,
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -253,7 +256,7 @@ describe('RBAC and Brands Integration Tests', () => {
             name: `Forbidden Tag ${testId}`,
             category: testCategory.id,
           },
-        })
+        }),
       ).rejects.toThrow()
 
       await expect(
@@ -265,7 +268,7 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             name: `Renamed Tag ${testId}`,
           },
-        })
+        }),
       ).rejects.toThrow()
 
       await expect(
@@ -274,7 +277,7 @@ describe('RBAC and Brands Integration Tests', () => {
           id: testTag.id,
           user: userBob,
           overrideAccess: false,
-        })
+        }),
       ).rejects.toThrow()
     })
 
@@ -352,7 +355,7 @@ describe('RBAC and Brands Integration Tests', () => {
             sellingPrice: 100,
             status: 'draft',
           },
-        })
+        }),
       ).rejects.toThrow('You can only assign products to your own brands.')
     })
 
@@ -423,7 +426,7 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             title: 'Hacked by Bob',
           },
-        })
+        }),
       ).rejects.toThrow()
 
       await expect(
@@ -432,7 +435,7 @@ describe('RBAC and Brands Integration Tests', () => {
           id: productCharlie.id,
           user: userBob,
           overrideAccess: false,
-        })
+        }),
       ).rejects.toThrow()
     })
   })

@@ -7,7 +7,7 @@
 export async function unlinkTagFromProducts(
   tagId: string,
   payload: any,
-  categoryFilter?: string[]
+  categoryFilter?: string[],
 ): Promise<void> {
   if (!tagId || !payload) return
 

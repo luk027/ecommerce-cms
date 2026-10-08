@@ -26,10 +26,7 @@ export function shapeListingProduct(doc: any) {
     id: String(doc.id || doc._id),
     slug: doc.slug || '',
     title: doc.title || '',
-    brand:
-      doc.brand && typeof doc.brand === 'object'
-        ? doc.brand.name || ''
-        : doc.brand || '',
+    brand: doc.brand && typeof doc.brand === 'object' ? doc.brand.name || '' : doc.brand || '',
     category,
     price: {
       selling: typeof doc.sellingPrice === 'number' ? doc.sellingPrice : 0,
@@ -69,10 +66,7 @@ export function shapeDetailProduct(doc: any) {
     id: String(doc.id || doc._id),
     slug: doc.slug || '',
     title: doc.title || '',
-    brand:
-      doc.brand && typeof doc.brand === 'object'
-        ? doc.brand.name || ''
-        : doc.brand || '',
+    brand: doc.brand && typeof doc.brand === 'object' ? doc.brand.name || '' : doc.brand || '',
     status: doc.status || 'draft',
     category,
     price: {
