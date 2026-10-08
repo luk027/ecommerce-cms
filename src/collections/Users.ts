@@ -5,6 +5,7 @@ export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
+    group: 'Accounts',
     defaultColumns: ['email', 'role', 'createdAt'],
     hidden: ({ user }) => (user as any)?.role !== 'admin',
   },

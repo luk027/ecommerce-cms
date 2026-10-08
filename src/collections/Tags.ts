@@ -7,6 +7,7 @@ export const Tags: CollectionConfig = {
   slug: 'tags',
   admin: {
     useAsTitle: 'name',
+    group: 'Catalog',
     defaultColumns: ['name', 'category', 'createdAt'],
   },
   access: {

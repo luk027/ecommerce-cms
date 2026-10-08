@@ -5,6 +5,7 @@ export const Brands: CollectionConfig = {
   slug: 'brands',
   admin: {
     useAsTitle: 'name',
+    group: 'Catalog',
     defaultColumns: ['name', 'currency', 'owner', 'createdAt'],
   },
   access: {
@@ -57,9 +58,7 @@ export const Brands: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'INR',
-      options: [
-        { label: 'INR (₹)', value: 'INR' },
-      ],
+      options: [{ label: 'INR (₹)', value: 'INR' }],
       admin: {
         description: 'Currency used for all products under this brand.',
       },

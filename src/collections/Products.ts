@@ -8,6 +8,7 @@ export const Products: CollectionConfig = {
   slug: 'products',
   admin: {
     useAsTitle: 'title',
+    group: 'Catalog',
     defaultColumns: ['title', 'sku', 'category', 'status', 'sellingPrice', 'stockStatus'],
   },
   access: {
@@ -176,9 +177,7 @@ export const Products: CollectionConfig = {
           name: 'currency',
           type: 'select',
           defaultValue: 'INR',
-          options: [
-            { label: 'INR (₹)', value: 'INR' },
-          ],
+          options: [{ label: 'INR (₹)', value: 'INR' }],
           admin: {
             width: '33%',
             readOnly: true,
@@ -409,11 +408,8 @@ export const Products: CollectionConfig = {
 
         // 7. Filter product attributes to only include labels that exist in the current tags.
         //    Strip any orphaned labels (from tags that were removed).
-        const incomingAttrs: { label: string; value: any; group?: string; id?: string }[] = Array.isArray(
-          data.attributes,
-        )
-          ? data.attributes
-          : []
+        const incomingAttrs: { label: string; value: any; group?: string; id?: string }[] =
+          Array.isArray(data.attributes) ? data.attributes : []
 
         const filteredAttrs = incomingAttrs
           .filter((attr) => {
@@ -431,7 +427,8 @@ export const Products: CollectionConfig = {
             const key = groupName
               ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
               : normalizeLabel(trimmedLabel)
-            const matchedTagAttr = validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
+            const matchedTagAttr =
+              validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
             return {
               ...attr,
               label: matchedTagAttr?.label || trimmedLabel,
@@ -453,7 +450,9 @@ export const Products: CollectionConfig = {
                 ? String(userAttr.value).trim()
                 : ''
             if (!val) {
-              const displayLabel = tagAttr.group ? `${tagAttr.group} > ${tagAttr.label}` : tagAttr.label
+              const displayLabel = tagAttr.group
+                ? `${tagAttr.group} > ${tagAttr.label}`
+                : tagAttr.label
               throw new Error(`Attribute "${displayLabel}" value cannot be empty.`)
             }
           }
@@ -530,11 +529,16 @@ export const Products: CollectionConfig = {
             const key = groupName
               ? `${normalizeLabel(groupName)}::${normalizeLabel(trimmedLabel)}`
               : normalizeLabel(trimmedLabel)
-            const tagAttr = validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
+            const tagAttr =
+              validLabelMap.get(key) || tagAttrByLabel.get(normalizeLabel(trimmedLabel))
             return {
               label: tagAttr?.label || trimmedLabel,
               value: String(attr.value ?? '').trim(),
-              ...(tagAttr?.group ? { group: tagAttr.group } : groupName ? { group: groupName } : {}),
+              ...(tagAttr?.group
+                ? { group: tagAttr.group }
+                : groupName
+                  ? { group: groupName }
+                  : {}),
             }
           })
           .filter((attr) => {
