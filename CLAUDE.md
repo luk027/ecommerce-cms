@@ -18,7 +18,20 @@ ecommerce-cms/
 ├── src/
 │   ├── access/          # Access control & RBAC predicates (e.g., isAdmin, ownerFilter)
 │   ├── app/             # Next.js App Router ((frontend) routes, (payload) admin)
-│   ├── collections/     # Payload collection definitions (Products, Brands, Users, etc.)
+│   ├── collections/
+│   │   ├── accounts/
+│   │   │   ├── users/
+│   │   │   │   ├── fields.ts
+│   │   │   │   ├── hooks.ts
+│   │   │   │   └── index.ts
+│   │   │   └── index.ts
+│   │   ├── catalog/
+│   │   │   ├── brands/       # fields.ts, hooks.ts, index.ts
+│   │   │   ├── categories/   # fields.ts, hooks.ts, index.ts
+│   │   │   ├── products/     # fields.ts, hooks.ts, index.ts
+│   │   │   ├── tags/         # fields.ts, hooks.ts, index.ts
+│   │   │   └── index.ts
+│   │   └── index.ts
 │   ├── components/      # UI components & custom Payload admin UI fields
 │   ├── endpoints/       # Custom API handlers & seed scripts (endpoints/seed/index.ts)
 │   ├── utilities/       # Pure helper functions, formatters, and data shapers
@@ -46,7 +59,7 @@ ecommerce-cms/
 ### 2. File Placement Rules
 
 - **Access Control (`src/access/`)**: All reusable access control functions for collections and fields belong here.
-- **Collections (`src/collections/`)**: Keep collection configurations modular and clean. Reusable access control belongs in `src/access/`, and business logic helpers belong in `src/utilities/`.
+- **Collections (`src/collections/`)**: Organize collection folders by their Payload admin group (for example, `accounts/users/` and `catalog/products/`). Keep each collection's `admin.group` label aligned with its parent group (`Accounts` or `Catalog`). Each collection's `index.ts` contains its slug, admin configuration, access control, and references to its fields and hooks. Keep field definitions in `fields.ts` and lifecycle hooks in `hooks.ts`; add these files only when needed. Group-level `index.ts` files export collection configs, while `src/collections/index.ts` provides the collection array consumed by `payload.config.ts`. Reusable access control belongs in `src/access/`, and shared business logic belongs in `src/utilities/`.
 - **Utilities (`src/utilities/`)**: Generic and catalog-specific helpers (e.g. data normalization, discount calculations, product payload shaping) must be pure functions where possible.
 - **Endpoints (`src/endpoints/`)**: Endpoints and seed routines belong here.
 - **Components (`src/components/`)**: Custom UI components and admin field components belong here.

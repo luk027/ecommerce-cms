@@ -816,7 +816,9 @@ describe('Catalog Integration Tests', () => {
 
       const storedAttrs = prod.attributes as any[]
       expect(storedAttrs).toHaveLength(5)
-      expect(storedAttrs.find((a) => a.label === 'Voice Assistant Compatibility')?.value).toBe('false')
+      expect(storedAttrs.find((a) => a.label === 'Voice Assistant Compatibility')?.value).toBe(
+        'false',
+      )
       expect(storedAttrs.find((a) => a.label === 'RGB')?.group).toBe('Headphones')
       expect(storedAttrs.find((a) => a.label === 'RGB')?.value).toBe('true')
       expect(storedAttrs.find((a) => a.label === 'Battery Life')?.value).toBe('10 to 12 Hours')

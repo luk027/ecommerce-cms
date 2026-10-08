@@ -24,8 +24,9 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
   // Watch selected tags from the form
   const rawTags = useFormFields(([fields]: any) => fields?.tags?.value)
 
-  const [availableDefs, setAvailableDefs] = useState<TagAttributeDef[]>([])
-  const [loading, setLoading] = useState(false)
+  const [tagData, setTagData] = useState<{ key: string; definitions: TagAttributeDef[] } | null>(
+    null,
+  )
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   // Extract array of string IDs from tags form value
@@ -40,6 +41,9 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
       })
       .filter((id): id is string => Boolean(id && id.trim()))
   }, [rawTags])
+  const tagKey = tagIds.join(',')
+  const availableDefs = tagData?.key === tagKey ? tagData.definitions : []
+  const loading = tagIds.length > 0 && tagData?.key !== tagKey
 
   // Client-side validator for Payload Form
   const validateField = useCallback(
@@ -117,33 +121,25 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
 
   // Fetch tag documents whenever tagIds change
   useEffect(() => {
-    if (tagIds.length === 0) {
-      setAvailableDefs([])
-      return
-    }
+    if (!tagKey) return
 
     let isMounted = true
-    setLoading(true)
 
-    fetch(`/api/storefront/tags?ids=${encodeURIComponent(tagIds.join(','))}`)
+    fetch(`/api/storefront/tags?ids=${encodeURIComponent(tagKey)}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((tagsData) => {
         if (!isMounted) return
-        const defs = mergeTagAttributeDefs(tagsData)
-        setAvailableDefs(defs)
+        setTagData({ key: tagKey, definitions: mergeTagAttributeDefs(tagsData) })
       })
       .catch(() => {
         if (!isMounted) return
-        setAvailableDefs([])
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false)
+        setTagData({ key: tagKey, definitions: [] })
       })
 
     return () => {
       isMounted = false
     }
-  }, [tagIds.join(',')])
+  }, [tagKey])
 
   // Helper to lookup current value for an attribute definition
   const getValueForDef = useCallback(
@@ -373,7 +369,8 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
           (() => {
             const currentLower = currentVal.trim().toLowerCase()
             const isTrue = currentLower === 'true' || currentLower === 'yes' || currentLower === '1'
-            const isFalse = currentLower === 'false' || currentLower === 'no' || currentLower === '0'
+            const isFalse =
+              currentLower === 'false' || currentLower === 'no' || currentLower === '0'
 
             return (
               <div style={{ display: 'flex', gap: '10px', marginTop: '2px' }}>
@@ -453,9 +450,7 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
             style={{
               padding: '9px 12px',
               borderRadius: '5px',
-              border: error
-                ? '1px solid #ef4444'
-                : '1px solid var(--theme-elevation-200, #3a3a3a)',
+              border: error ? '1px solid #ef4444' : '1px solid var(--theme-elevation-200, #3a3a3a)',
               background: 'var(--theme-elevation-50, #141414)',
               color: 'var(--theme-elevation-900, #ffffff)',
               fontSize: '13px',
@@ -610,7 +605,9 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
 
           {/* Grouped Attributes */}
           {groupedDefs.map(({ groupName, items }) => {
-            const groupFilled = items.filter((item) => getValueForDef(item).trim().length > 0).length
+            const groupFilled = items.filter(
+              (item) => getValueForDef(item).trim().length > 0,
+            ).length
 
             return (
               <div
@@ -686,4 +683,3 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
     </div>
   )
 }
-
