@@ -96,7 +96,7 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
     let isMounted = true
     setLoading(true)
 
-    fetch(`/api/catalog/tags?ids=${encodeURIComponent(tagIds.join(','))}`)
+    fetch(`/api/storefront/tags?ids=${encodeURIComponent(tagIds.join(','))}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((tagsData) => {
         if (!isMounted) return
