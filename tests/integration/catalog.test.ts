@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
-import { shapeListingProduct, shapeDetailProduct } from '@/lib/catalog/shapeProduct'
+import { shapeListingProduct, shapeDetailProduct } from '@/utilities/shapeProduct'
 
 let payload: Payload
 

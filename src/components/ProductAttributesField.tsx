@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useField, useFormFields } from '@payloadcms/ui'
-import { mergeTagAttributeDefs, TagAttributeDef } from '../lib/catalog/mergeAttributes'
-import { normalizeLabel } from '../lib/catalog/normalize'
+import { mergeTagAttributeDefs, TagAttributeDef } from '../utilities/mergeAttributes'
+import { normalizeLabel } from '../utilities/normalize'
 
 interface StoredAttribute {
   label: string

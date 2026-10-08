@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateProductTags } from '@/lib/catalog/validateTags'
+import { validateProductTags } from '@/utilities/validateTags'
 
 describe('validateProductTags', () => {
   it('returns empty array when all tags belong to product category (single category)', () => {

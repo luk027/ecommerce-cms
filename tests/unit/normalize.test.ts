@@ -1,5 +1,5 @@
-﻿import { describe, it, expect } from 'vitest'
-import { normalizeLabel, slugify } from '@/lib/catalog/normalize'
+import { describe, it, expect } from 'vitest'
+import { normalizeLabel, slugify } from '@/utilities/normalize'
 
 describe('normalizeLabel', () => {
   it('trims leading and trailing spaces', () => {

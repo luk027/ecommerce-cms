@@ -1,5 +1,5 @@
 import { getPayload } from 'payload'
-import config from '../payload.config'
+import config from '@/payload.config'
 import 'dotenv/config'
 
 export interface TagAttributeSeed {
@@ -257,7 +257,7 @@ export const taxonomyData: CategorySeed[] = [
     category: 'Home & Living',
     tags: [
       {
-        name: 'Room Décor',
+        name: 'Room D├⌐cor',
         attributes: [
           { label: 'Dimensions (cm)', validation: { type: 'text' } },
           { label: 'Material', validation: { type: 'text' } },
@@ -719,7 +719,7 @@ export async function resetAndSeed(): Promise<void> {
       })
       const tagId = String(createdTag.id)
       createdTagMap.set(tagItem.name, tagId)
-      console.log(`  └─ [Tag Created] ${tagItem.name} (${tagItem.attributes.length} attributes, ID: ${tagId})`)
+      console.log(`  ΓööΓöÇ [Tag Created] ${tagItem.name} (${tagItem.attributes.length} attributes, ID: ${tagId})`)
     }
   }
 
@@ -753,7 +753,7 @@ export async function resetAndSeed(): Promise<void> {
       },
     })
     createdBrandMap.set(bName, String(createdBrand.id))
-    console.log(`✔ [Brand Created] ${bName} (ID: ${createdBrand.id})`)
+    console.log(`Γ£ö [Brand Created] ${bName} (ID: ${createdBrand.id})`)
   }
 
   console.log('\n--- Seeding Authentic Products ---')
@@ -790,7 +790,7 @@ export async function resetAndSeed(): Promise<void> {
       },
     })
 
-    console.log(`✔ [Product Created] ${createdProduct.title} (SKU: ${createdProduct.sku}, ID: ${createdProduct.id})`)
+    console.log(`Γ£ö [Product Created] ${createdProduct.title} (SKU: ${createdProduct.sku}, ID: ${createdProduct.id})`)
   }
 
   // 9. Final Count Verification

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import config from '@payload-config'
 import { getPayload } from 'payload'
-import { shapeDetailProduct } from '@/lib/catalog/shapeProduct'
+import { shapeDetailProduct } from '@/utilities/shapeProduct'
 
 export async function GET(
   req: NextRequest,

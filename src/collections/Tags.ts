@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
-import { normalizeLabel } from '../lib/catalog/normalize'
-import { unlinkTagFromProducts } from '../lib/catalog/unlinkTag'
-import { isAdmin } from '../lib/access/isAdmin'
+import { normalizeLabel } from '../utilities/normalize'
+import { unlinkTagFromProducts } from '../utilities/unlinkTag'
+import { isAdmin } from '../access/isAdmin'
 
 export const Tags: CollectionConfig = {
   slug: 'tags',
