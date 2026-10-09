@@ -16,8 +16,8 @@ describe('normalizeLabel', () => {
 
   it('handles empty or non-string inputs safely', () => {
     expect(normalizeLabel('')).toBe('')
-    expect(normalizeLabel(null as any)).toBe('')
-    expect(normalizeLabel(undefined as any)).toBe('')
+    expect(normalizeLabel(null as unknown as string)).toBe('')
+    expect(normalizeLabel(undefined as unknown as string)).toBe('')
   })
 })
 

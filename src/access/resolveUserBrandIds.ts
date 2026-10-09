@@ -18,7 +18,7 @@ export async function resolveUserBrandIds(
     })
 
     return brands.docs.map((b) => String(b.id))
-  } catch (error) {
+  } catch {
     return []
   }
 }

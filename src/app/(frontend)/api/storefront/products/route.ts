@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import config from '@payload-config'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 import { shapeListingProduct } from '@/utilities/shapeProduct'
 
 export async function GET(req: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    const andClauses: any[] = [
+    const andClauses: Where[] = [
       {
         status: {
           equals: 'active',
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
 
       const matchedBrandIds = matchingBrands.docs.map((b) => String(b.id))
 
-      const orSearchClauses: any[] = [
+      const orSearchClauses: Where[] = [
         {
           title: {
             like: queryText,
@@ -146,9 +146,9 @@ export async function GET(req: NextRequest) {
       totalPages: result.totalPages || 1,
       docs,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch products' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch products' },
       { status: 500 },
     )
   }

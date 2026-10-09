@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useField, useFormFields } from '@payloadcms/ui'
 import { mergeTagAttributeDefs, TagAttributeDef } from '@/utilities/mergeAttributes'
 import { normalizeLabel } from '@/utilities/normalize'
+import { relationId } from '@/utilities/relationId'
 
 interface StoredAttribute {
   label: string
@@ -22,7 +23,7 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
   const path = props.path || 'attributes'
 
   // Watch selected tags from the form
-  const rawTags = useFormFields(([fields]: any) => fields?.tags?.value)
+  const rawTags = useFormFields(([fields]) => fields?.tags?.value)
 
   const [tagData, setTagData] = useState<{ key: string; definitions: TagAttributeDef[] } | null>(
     null,
@@ -34,22 +35,25 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
     if (!rawTags) return []
     const arr = Array.isArray(rawTags) ? rawTags : [rawTags]
     return arr
-      .map((t: any) => {
-        if (!t) return null
-        if (typeof t === 'object') return String(t.id || t._id || t.value || '')
-        return String(t)
-      })
-      .filter((id): id is string => Boolean(id && id.trim()))
+      .map(
+        (t: unknown) =>
+          relationId(t) ??
+          (t && typeof t === 'object' ? relationId((t as { value?: unknown }).value) : null),
+      )
+      .filter((id): id is string => Boolean(id?.trim()))
   }, [rawTags])
   const tagKey = tagIds.join(',')
-  const availableDefs = tagData?.key === tagKey ? tagData.definitions : []
+  const availableDefs = useMemo(
+    () => (tagData?.key === tagKey ? tagData.definitions : []),
+    [tagData, tagKey],
+  )
   const loading = tagIds.length > 0 && tagData?.key !== tagKey
 
   // Client-side validator for Payload Form
   const validateField = useCallback(
-    (val: any) => {
+    (val: unknown) => {
       if (availableDefs.length === 0) return true
-      const list: StoredAttribute[] = Array.isArray(val) ? val : []
+      const list = Array.isArray(val) ? (val as StoredAttribute[]) : []
 
       for (const def of availableDefs) {
         const key = getAttributeKey(def.label, def.group)
@@ -117,7 +121,10 @@ export function ProductAttributesField(props: { path?: string; readOnly?: boolea
     path,
     validate: validateField,
   })
-  const value: StoredAttribute[] = Array.isArray(fieldValue) ? fieldValue : []
+  const value = useMemo(
+    () => (Array.isArray(fieldValue) ? (fieldValue as StoredAttribute[]) : []),
+    [fieldValue],
+  )
 
   // Fetch tag documents whenever tagIds change
   useEffect(() => {

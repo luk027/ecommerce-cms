@@ -1,32 +1,58 @@
-import { mergeProductAttributes } from './mergeAttributes'
+import { mergeProductAttributes, type ProductAttribute, type TagDocLike } from './mergeAttributes'
+import { relationId } from './relationId'
 
-export function shapeListingProduct(doc: any) {
+/** A product document from the Local API; relationships may be raw IDs or populated documents. */
+export interface ProductDocLike {
+  id?: unknown
+  _id?: unknown
+  slug?: string | null
+  title?: string | null
+  status?: string | null
+  sku?: string | null
+  brand?: unknown
+  category?: unknown
+  sellingPrice?: number | null
+  mrp?: number | null
+  discountPercent?: number | null
+  currency?: string | null
+  stockStatus?: string | null
+  tags?: unknown[] | null
+  attributes?: unknown
+}
+
+function populatedName(value: unknown): string {
+  if (!value || typeof value !== 'object') return ''
+  const { name } = value as { name?: unknown }
+  return typeof name === 'string' ? name : ''
+}
+
+export function shapeListingProduct(doc: ProductDocLike | null | undefined) {
   if (!doc) return null
 
   // Category
-  const category =
-    doc.category && typeof doc.category === 'object'
-      ? { id: String(doc.category.id || doc.category._id), name: doc.category.name || '' }
-      : { id: String(doc.category || ''), name: '' }
+  const category = { id: relationId(doc.category) ?? '', name: populatedName(doc.category) }
 
   // Filter resolved tags only
-  const validTags = Array.isArray(doc.tags)
-    ? doc.tags.filter((t: any) => t && typeof t === 'object' && (t.id || t._id))
-    : []
+  const validTags = (Array.isArray(doc.tags) ? doc.tags : []).filter(
+    (t): t is TagDocLike => typeof t === 'object' && t !== null && relationId(t) !== null,
+  )
 
-  const formattedTags = validTags.map((t: any) => ({
-    id: String(t.id || t._id),
-    name: t.name || '',
+  const formattedTags = validTags.map((t) => ({
+    id: String(relationId(t)),
+    name: populatedName(t),
   }))
 
   // Attributes: stored on the product, filtered against active tags
-  const attributes = mergeProductAttributes(doc.attributes, validTags)
+  const storedAttributes = Array.isArray(doc.attributes)
+    ? (doc.attributes as ProductAttribute[])
+    : null
+  const attributes = mergeProductAttributes(storedAttributes, validTags)
 
   return {
-    id: String(doc.id || doc._id),
+    id: relationId(doc) ?? '',
     slug: doc.slug || '',
     title: doc.title || '',
-    brand: doc.brand && typeof doc.brand === 'object' ? doc.brand.name || '' : doc.brand || '',
+    brand: typeof doc.brand === 'string' ? doc.brand : populatedName(doc.brand),
     category,
     price: {
       selling: typeof doc.sellingPrice === 'number' ? doc.sellingPrice : 0,
@@ -40,9 +66,9 @@ export function shapeListingProduct(doc: any) {
   }
 }
 
-export function shapeDetailProduct(doc: any) {
+export function shapeDetailProduct(doc: ProductDocLike | null | undefined) {
   const listing = shapeListingProduct(doc)
-  if (!listing) return null
+  if (!doc || !listing) return null
 
   return {
     ...listing,

@@ -34,7 +34,7 @@ export const brandsFields: CollectionConfig['fields'] = [
     index: true,
     admin: {
       description: 'Owner user of this brand. Automatically assigned.',
-      condition: (data, siblingData, { user }) => (user as any)?.role === 'admin',
+      condition: (data, siblingData, { user }) => user?.role === 'admin',
     },
     access: {
       update: isAdminField,

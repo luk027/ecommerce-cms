@@ -1,21 +1,23 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
+import type { Brand, Category, Product, Tag, User } from '@/payload-types'
+import { relationId } from '@/utilities/relationId'
 
 let payload: Payload
 
 describe('RBAC and Brands Integration Tests', () => {
   const testId = Date.now().toString()
-  let adminUser: any
-  let userBob: any
-  let userCharlie: any
+  let adminUser: User
+  let userBob: User
+  let userCharlie: User
 
-  let brandBobINR: any
-  let brandBobSecond: any
-  let brandCharlie: any
+  let brandBobINR: Brand
+  let brandBobSecond: Brand
+  let brandCharlie: Brand
 
-  let testCategory: any
-  let testTag: any
+  let testCategory: Category
+  let testTag: Tag
 
   beforeAll(async () => {
     const payloadConfig = await config
@@ -125,9 +127,8 @@ describe('RBAC and Brands Integration Tests', () => {
       })
 
       expect(brandBobINR).toBeDefined()
-      const ownerId =
-        typeof brandBobINR.owner === 'object' ? brandBobINR.owner.id : brandBobINR.owner
-      expect(String(ownerId)).toBe(String(userBob.id))
+      const ownerId = relationId(brandBobINR.owner)
+      expect(ownerId).toBe(String(userBob.id))
       expect(brandBobINR.currency).toBe('INR')
     })
 
@@ -144,9 +145,8 @@ describe('RBAC and Brands Integration Tests', () => {
       })
 
       expect(brandBobSecond.currency).toBe('INR')
-      const ownerId =
-        typeof brandBobSecond.owner === 'object' ? brandBobSecond.owner.id : brandBobSecond.owner
-      expect(String(ownerId)).toBe(String(userBob.id))
+      const ownerId = relationId(brandBobSecond.owner)
+      expect(ownerId).toBe(String(userBob.id))
     })
 
     it('another user can create their own brand', async () => {
@@ -161,9 +161,8 @@ describe('RBAC and Brands Integration Tests', () => {
         },
       })
 
-      const ownerId =
-        typeof brandCharlie.owner === 'object' ? brandCharlie.owner.id : brandCharlie.owner
-      expect(String(ownerId)).toBe(String(userCharlie.id))
+      const ownerId = relationId(brandCharlie.owner)
+      expect(ownerId).toBe(String(userCharlie.id))
     })
 
     it('user can only list their own brands', async () => {
@@ -299,9 +298,9 @@ describe('RBAC and Brands Integration Tests', () => {
   })
 
   describe('Products with Brands and RBAC scoping', () => {
-    let productBobINR: any
-    let productBobSecond: any
-    let productCharlie: any
+    let productBobINR: Product
+    let productBobSecond: Product
+    let productCharlie: Product
 
     it('user product inherits currency from selected INR brand', async () => {
       productBobINR = await payload.create({
@@ -455,8 +454,8 @@ describe('RBAC and Brands Integration Tests', () => {
         },
       })
 
-      const createdById = typeof prod.createdBy === 'object' ? prod.createdBy?.id : prod.createdBy
-      expect(String(createdById)).toBe(String(userBob.id))
+      const createdById = relationId(prod.createdBy)
+      expect(createdById).toBe(String(userBob.id))
     })
 
     it('returns hook validation errors as public 400 errors', async () => {

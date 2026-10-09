@@ -1,4 +1,5 @@
 import type { PayloadRequest, Where } from 'payload'
+import { relationId } from './relationId'
 
 /**
  * Unlinks a tag from products.
@@ -43,8 +44,8 @@ export async function unlinkTagFromProducts(
     for (const product of res.docs) {
       const currentTags = Array.isArray(product.tags) ? product.tags : []
       const newTags = currentTags
-        .map((t: any) => (typeof t === 'object' && t ? String(t.id || t._id) : String(t)))
-        .filter((t: string) => t !== targetTagId)
+        .map((t) => relationId(t))
+        .filter((t): t is string => t !== null && t !== targetTagId)
 
       await req.payload.update({
         collection: 'products',

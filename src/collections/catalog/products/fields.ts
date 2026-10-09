@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
+import type { Product } from '@/payload-types'
 import { isAdminField } from '@/access/isAdmin'
+import { relationId } from '@/utilities/relationId'
 
 export const productsFields: CollectionConfig['fields'] = [
   {
@@ -64,7 +66,7 @@ export const productsFields: CollectionConfig['fields'] = [
     },
     filterOptions: ({ req }) => {
       if (!req.user) return false
-      if ((req.user as any).role === 'admin') return true
+      if (req.user.role === 'admin') return true
       return {
         owner: {
           equals: req.user.id,
@@ -82,7 +84,7 @@ export const productsFields: CollectionConfig['fields'] = [
     admin: {
       readOnly: true,
       position: 'sidebar',
-      condition: (data, siblingData, { user }) => (user as any)?.role === 'admin',
+      condition: (data, siblingData, { user }) => user?.role === 'admin',
     },
   },
   {
@@ -162,9 +164,9 @@ export const productsFields: CollectionConfig['fields'] = [
       description: 'Only tags matching the selected category can be chosen.',
     },
     filterOptions: ({ siblingData, data }) => {
-      const cat = (data as any)?.category || (siblingData as any)?.category
-      if (!cat) return false
-      const catId = typeof cat === 'object' && cat ? cat.id || cat._id : cat
+      const catId =
+        relationId(data?.category) || relationId((siblingData as Partial<Product>)?.category)
+      if (!catId) return false
       return {
         category: {
           equals: catId,

@@ -10,7 +10,7 @@ export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
       }
 
       if (operation === 'create' && req.user) {
-        if (!data.owner || (req.user as any).role !== 'admin') {
+        if (!data.owner || req.user.role !== 'admin') {
           data.owner = req.user.id
         }
       }

@@ -7,7 +7,7 @@ import { resolveUserBrandIds } from './resolveUserBrandIds'
  */
 export const isAdminOrProductOwner: Access = async ({ req }) => {
   if (!req.user) return false
-  if ((req.user as any).role === 'admin') return true
+  if (req.user.role === 'admin') return true
 
   const brandIds = await resolveUserBrandIds(req.payload, req.user.id)
   const orConditions: Where[] = []

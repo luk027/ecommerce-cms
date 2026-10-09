@@ -2,6 +2,8 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 import { shapeListingProduct, shapeDetailProduct } from '@/utilities/shapeProduct'
+import { relationId } from '@/utilities/relationId'
+import type { ProductAttribute } from '@/utilities/mergeAttributes'
 
 let payload: Payload
 
@@ -85,7 +87,7 @@ describe('Catalog Integration Tests', () => {
         collection: 'categories',
         where: { name: { contains: testId } },
       })
-    } catch (e) {
+    } catch {
       // ignore cleanup errors
     }
   })
@@ -128,7 +130,7 @@ describe('Catalog Integration Tests', () => {
           collection: 'tags',
           data: {
             name: `Tag No Cat ${testId}`,
-            category: '' as any,
+            category: '',
           },
         }),
       ).rejects.toThrow(/associated with a category/i)
@@ -178,8 +180,8 @@ describe('Catalog Integration Tests', () => {
       expect(tag.id).toBeDefined()
       expect(tag.category).toBeDefined()
       expect(tag.attributes).toHaveLength(2)
-      expect((tag.attributes as any[])[0].label).toBe('Screen Size')
-      expect((tag.attributes as any[])[0].value).toBeUndefined()
+      expect(tag.attributes?.[0]?.label).toBe('Screen Size')
+      expect((tag.attributes?.[0] as Record<string, unknown> | undefined)?.value).toBeUndefined()
 
       await payload.delete({ collection: 'tags', id: tag.id })
     })
@@ -211,9 +213,9 @@ describe('Catalog Integration Tests', () => {
 
       expect(tag.id).toBeDefined()
       expect(tag.attributes).toHaveLength(2)
-      const attrs = tag.attributes as any[]
+      const attrs = tag.attributes ?? []
       expect(attrs[0].label).toBe('Water Resistant')
-      expect(attrs[0].validation.type).toBe('boolean')
+      expect(attrs[0].validation?.type).toBe('boolean')
       expect(attrs[1].groupName).toBe('Display Specifications')
       expect(attrs[1].items).toHaveLength(3)
 
@@ -380,11 +382,11 @@ describe('Catalog Integration Tests', () => {
         },
       })
 
-      const storedAttrs = prod.attributes as any[]
+      const storedAttrs = prod.attributes as ProductAttribute[]
       expect(storedAttrs).toHaveLength(2)
-      expect(storedAttrs.find((a: any) => a.label === 'Feature')?.value).toBe('Smart AI')
-      expect(storedAttrs.find((a: any) => a.label === 'Connectivity')?.value).toBe('WiFi 6')
-      expect(storedAttrs.find((a: any) => a.label === 'OrphanedLabel')).toBeUndefined()
+      expect(storedAttrs.find((a) => a.label === 'Feature')?.value).toBe('Smart AI')
+      expect(storedAttrs.find((a) => a.label === 'Connectivity')?.value).toBe('WiFi 6')
+      expect(storedAttrs.find((a) => a.label === 'OrphanedLabel')).toBeUndefined()
     })
 
     it('validates attribute value type when tag defines number validation', async () => {
@@ -440,8 +442,8 @@ describe('Catalog Integration Tests', () => {
         },
       })
 
-      const storedAttrs = prod.attributes as any[]
-      const ecoAttrs = storedAttrs.filter((a: any) => a.label === 'Eco Rating')
+      const storedAttrs = prod.attributes as ProductAttribute[]
+      const ecoAttrs = storedAttrs.filter((a) => a.label === 'Eco Rating')
       expect(ecoAttrs).toHaveLength(1)
       expect(ecoAttrs[0].value).toBe('A+')
 
@@ -496,7 +498,7 @@ describe('Catalog Integration Tests', () => {
         },
       })
 
-      const stored = prod.attributes as any[]
+      const stored = prod.attributes as ProductAttribute[]
       expect(stored).toHaveLength(1)
       expect(stored[0].label).toBe('Waterproof')
       expect(stored[0].value).toBe('true')
@@ -559,7 +561,7 @@ describe('Catalog Integration Tests', () => {
         },
       })
 
-      const stored = prod.attributes as any[]
+      const stored = prod.attributes as ProductAttribute[]
       expect(stored).toHaveLength(3)
       expect(stored.find((a) => a.label === 'Height')?.group).toBe('Dimensions')
       expect(stored.find((a) => a.label === 'Width')?.group).toBe('Dimensions')
@@ -626,9 +628,7 @@ describe('Catalog Integration Tests', () => {
         id: prod.id,
       })
 
-      const remainingTagIds = (updatedProd.tags as any[]).map((t) =>
-        typeof t === 'object' ? String(t.id) : String(t),
-      )
+      const remainingTagIds = (updatedProd.tags ?? []).map((t) => relationId(t))
       expect(remainingTagIds).toEqual([tagAId])
       expect(remainingTagIds).not.toContain(String(tempTag.id))
     })
@@ -670,9 +670,7 @@ describe('Catalog Integration Tests', () => {
         collection: 'products',
         id: prodA.id,
       })
-      const prodATags = (updatedProdA.tags as any[]).map((t) =>
-        typeof t === 'object' ? String(t.id) : String(t),
-      )
+      const prodATags = (updatedProdA.tags ?? []).map((t) => relationId(t))
       expect(prodATags).not.toContain(String(movableTag.id))
 
       await payload.delete({ collection: 'tags', id: movableTag.id })
@@ -814,7 +812,7 @@ describe('Catalog Integration Tests', () => {
         },
       })
 
-      const storedAttrs = prod.attributes as any[]
+      const storedAttrs = prod.attributes as ProductAttribute[]
       expect(storedAttrs).toHaveLength(5)
       expect(storedAttrs.find((a) => a.label === 'Voice Assistant Compatibility')?.value).toBe(
         'false',
@@ -830,7 +828,7 @@ describe('Catalog Integration Tests', () => {
       }
       const listing = shapeListingProduct(populatedDoc)
       expect(listing?.attributes).toHaveLength(5)
-      expect(listing?.attributes.find((a: any) => a.label === 'RGB')?.group).toBe('Headphones')
+      expect(listing?.attributes.find((a) => a.label === 'RGB')?.group).toBe('Headphones')
 
       await payload.delete({ collection: 'tags', id: tagMulti.id })
     })

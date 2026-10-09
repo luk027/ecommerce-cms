@@ -1,6 +1,10 @@
 import { APIError, type CollectionConfig } from 'payload'
 import { normalizeLabel } from '@/utilities/normalize'
+import { relationId } from '@/utilities/relationId'
 import { unlinkTagFromProducts } from '@/utilities/unlinkTag'
+
+// Tags used to store a `categories` array before moving to a single `category` relationship
+type LegacyTagData = { categories?: unknown[] }
 
 export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
   beforeValidate: [
@@ -29,7 +33,7 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
           req,
         })
 
-        const docId = originalDoc?.id || (data as any)?.id
+        const docId = originalDoc?.id || (data as { id?: string }).id
         const conflict = existing.docs.find(
           (doc) =>
             String(doc.id) !== String(docId) &&
@@ -42,17 +46,13 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
       }
 
       // Backward compatibility: if data has legacy categories array but no category, migrate it
-      if (
-        !data.category &&
-        Array.isArray((data as any).categories) &&
-        (data as any).categories.length > 0
-      ) {
-        data.category = (data as any).categories[0]
+      const legacyCategories = (data as LegacyTagData).categories
+      if (!data.category && Array.isArray(legacyCategories) && legacyCategories.length > 0) {
+        data.category = relationId(legacyCategories[0]) ?? undefined
       }
 
       // Validate category relationship
-      const catVal = data.category !== undefined ? data.category : originalDoc?.category
-      const catId = typeof catVal === 'object' && catVal ? catVal.id || catVal._id : catVal
+      const catId = relationId(data.category !== undefined ? data.category : originalDoc?.category)
       if (!catId) {
         throw new APIError('A tag must be associated with a category.', 400)
       }
@@ -169,23 +169,10 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
   afterChange: [
     async ({ doc, previousDoc, req, operation }) => {
       if (operation === 'update' && previousDoc) {
-        const prevCat = previousDoc.category
-          ? typeof previousDoc.category === 'object'
-            ? String(previousDoc.category.id || previousDoc.category._id)
-            : String(previousDoc.category)
-          : Array.isArray((previousDoc as any).categories) && (previousDoc as any).categories[0]
-            ? typeof (previousDoc as any).categories[0] === 'object'
-              ? String(
-                  (previousDoc as any).categories[0].id || (previousDoc as any).categories[0]._id,
-                )
-              : String((previousDoc as any).categories[0])
-            : null
-
-        const currentCat = doc.category
-          ? typeof doc.category === 'object'
-            ? String(doc.category.id || doc.category._id)
-            : String(doc.category)
-          : null
+        const prevCat =
+          relationId(previousDoc.category) ??
+          relationId((previousDoc as LegacyTagData).categories?.[0])
+        const currentCat = relationId(doc.category)
 
         if (prevCat && currentCat && prevCat !== currentCat) {
           await unlinkTagFromProducts(String(doc.id), req, [prevCat])

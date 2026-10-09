@@ -1,9 +1,18 @@
 import { normalizeLabel } from './normalize'
 
 export interface TagAttributeValidation {
-  type?: 'text' | 'number' | 'boolean' | string
+  type?: 'text' | 'number' | 'boolean' | string | null
   min?: number | null
   max?: number | null
+}
+
+/** A row of a tag's `attributes` array: either a single attribute or a group of attributes. */
+export interface TagAttributeEntry {
+  type?: string | null
+  label?: string | null
+  validation?: TagAttributeValidation | null
+  groupName?: string | null
+  items?: { label?: string | null; validation?: TagAttributeValidation | null }[] | null
 }
 
 export interface TagAttributeDef {
@@ -22,8 +31,8 @@ export interface ProductAttribute {
 export interface TagDocLike {
   id?: string
   name?: string
-  attributes?: any[] | null
-  [key: string]: any
+  attributes?: (TagAttributeEntry | null)[] | null
+  [key: string]: unknown
 }
 
 /**

@@ -1,9 +1,9 @@
-import type { AccessArgs, FieldAccess } from 'payload'
+import type { FieldAccess, PayloadRequest } from 'payload'
 
-export const isAdmin = ({ req }: AccessArgs | { req: any }): boolean => {
-  return Boolean(req.user && (req.user as any).role === 'admin')
+export const isAdmin = ({ req }: { req: PayloadRequest }): boolean => {
+  return req.user?.role === 'admin'
 }
 
 export const isAdminField: FieldAccess = ({ req }) => {
-  return Boolean(req.user && (req.user as any).role === 'admin')
+  return req.user?.role === 'admin'
 }

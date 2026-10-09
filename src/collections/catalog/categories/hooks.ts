@@ -25,7 +25,7 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
           req,
         })
 
-        const docId = originalDoc?.id || (data as any)?.id
+        const docId = originalDoc?.id || (data as { id?: string }).id
         const conflict = existing.docs.find(
           (doc) =>
             String(doc.id) !== String(docId) &&

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import config from '@payload-config'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-    const whereClause: any = {}
+    const whereClause: Where = {}
 
     if (categoryId) {
       whereClause.category = {
@@ -48,7 +48,10 @@ export async function GET(req: NextRequest) {
     }))
 
     return NextResponse.json(docs)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch tags' }, { status: 500 })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch tags' },
+      { status: 500 },
+    )
   }
 }

@@ -46,7 +46,7 @@ describe('mergeTagAttributeDefs', () => {
       attributes: [{ label: 'Feature', validation: { type: 'text' } }],
     }
 
-    const result = mergeTagAttributeDefs([tag1 as any, null, tag2, tag3])
+    const result = mergeTagAttributeDefs([tag1, null, tag2, tag3])
     expect(result).toHaveLength(1)
     expect(result[0].label).toBe('Feature')
   })

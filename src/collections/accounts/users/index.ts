@@ -9,13 +9,13 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     group: 'Accounts',
     defaultColumns: ['email', 'role', 'createdAt'],
-    hidden: ({ user }) => (user as any)?.role !== 'admin',
+    hidden: ({ user }) => user?.role !== 'admin',
   },
   auth: true,
   access: {
     read: ({ req }) => {
       if (!req.user) return false
-      if ((req.user as any).role === 'admin') return true
+      if (req.user.role === 'admin') return true
       return {
         id: {
           equals: req.user.id,
@@ -25,7 +25,7 @@ export const Users: CollectionConfig = {
     create: isAdmin,
     update: ({ req }) => {
       if (!req.user) return false
-      if ((req.user as any).role === 'admin') return true
+      if (req.user.role === 'admin') return true
       return {
         id: {
           equals: req.user.id,

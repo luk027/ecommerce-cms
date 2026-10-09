@@ -1,9 +1,10 @@
+import { relationId } from './relationId'
+
 export interface TagWithCategory {
   id?: string
   name?: string
   category?: string | { id: string } | null
   categories?: (string | { id: string } | null | undefined)[] | null
-  [key: string]: any
 }
 
 // Keep TagWithCategories as type alias for backwards compatibility
@@ -33,26 +34,12 @@ export function validateProductTags(
       continue
     }
 
-    let matches = false
-
     // 1. Check single category relationship
-    if (tag.category) {
-      const catId =
-        typeof tag.category === 'object'
-          ? String(tag.category.id || (tag.category as any)._id)
-          : String(tag.category)
-      if (catId === targetCategoryId) {
-        matches = true
-      }
-    }
+    let matches = relationId(tag.category) === targetCategoryId
 
     // 2. Check legacy categories array if not matched yet
     if (!matches && Array.isArray(tag.categories)) {
-      matches = tag.categories.some((cat) => {
-        if (!cat) return false
-        const catId = typeof cat === 'object' ? String(cat.id || (cat as any)._id) : String(cat)
-        return catId === targetCategoryId
-      })
+      matches = tag.categories.some((cat) => relationId(cat) === targetCategoryId)
     }
 
     if (!matches) {

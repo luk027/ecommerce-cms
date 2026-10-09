@@ -2,13 +2,18 @@ import { APIError, type CollectionConfig } from 'payload'
 import { slugify, normalizeLabel } from '@/utilities/normalize'
 import { validateProductTags } from '@/utilities/validateTags'
 import { computeDiscount } from '@/utilities/computeDiscount'
+import { relationId } from '@/utilities/relationId'
+import type { TagAttributeValidation } from '@/utilities/mergeAttributes'
+import type { Tag } from '@/payload-types'
+
+type TagAttrDef = { label: string; group?: string; validation: TagAttributeValidation }
 
 export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
   beforeValidate: [
     async ({ data, req, originalDoc, operation }) => {
       if (!data) return data
 
-      const isAdminUser = (req.user as any)?.role === 'admin'
+      const isAdminUser = req.user?.role === 'admin'
 
       // Set createdBy on create. Only admins may assign a product to another user.
       if (req.user && operation === 'create' && (!isAdminUser || !data.createdBy)) {
@@ -16,12 +21,11 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       }
 
       // Load the linked brand once: used for the ownership check and currency inheritance
-      const currentBrand = data.brand !== undefined ? data.brand : originalDoc?.brand
-      const brandDoc = currentBrand
+      const brandId = relationId(data.brand !== undefined ? data.brand : originalDoc?.brand)
+      const brandDoc = brandId
         ? await req.payload.findByID({
             collection: 'brands',
-            id:
-              typeof currentBrand === 'object' ? currentBrand.id || currentBrand._id : currentBrand,
+            id: brandId,
             depth: 0,
             disableErrors: true,
             req,
@@ -30,12 +34,9 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
 
       // Validate brand ownership for non-admin users
       if (req.user && !isAdminUser && brandDoc) {
-        const brandOwnerId =
-          brandDoc.owner && typeof brandDoc.owner === 'object'
-            ? (brandDoc.owner as any).id
-            : brandDoc.owner
+        const brandOwnerId = relationId(brandDoc.owner)
 
-        if (brandOwnerId && String(brandOwnerId) !== String(req.user.id)) {
+        if (brandOwnerId && brandOwnerId !== String(req.user.id)) {
           throw new APIError('You can only assign products to your own brands.', 400)
         }
       }
@@ -60,7 +61,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       if (Array.isArray(data.tags)) {
         const uniqueTagIds: string[] = []
         for (const t of data.tags) {
-          const id = typeof t === 'object' && t ? String(t.id || t._id) : String(t)
+          const id = relationId(t)
           if (id && !uniqueTagIds.includes(id)) {
             uniqueTagIds.push(id)
           }
@@ -69,20 +70,12 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       }
 
       // 4. Validate Tags match selected Category
-      const categoryId = data.category
-        ? typeof data.category === 'object'
-          ? String(data.category.id || data.category._id)
-          : String(data.category)
-        : originalDoc?.category
-          ? typeof originalDoc.category === 'object'
-            ? String(originalDoc.category.id || originalDoc.category._id)
-            : String(originalDoc.category)
-          : null
+      const categoryId = relationId(data.category) ?? relationId(originalDoc?.category)
 
       const tagIds = Array.isArray(data.tags) ? data.tags : []
 
       // 5. Load tag documents (needed for both validation and attribute management)
-      let tagDocs: any[] = []
+      let tagDocs: Tag[] = []
       if (tagIds.length > 0) {
         if (!categoryId) {
           throw new APIError('A category must be selected before attaching tags.', 400)
@@ -111,8 +104,8 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       }
 
       // 6. Collect unique labels from the selected tags (first-wins deduplication)
-      const validLabelMap = new Map<string, { label: string; group?: string; validation: any }>()
-      const tagAttrByLabel = new Map<string, { label: string; group?: string; validation: any }>()
+      const validLabelMap = new Map<string, TagAttrDef>()
+      const tagAttrByLabel = new Map<string, TagAttrDef>()
 
       for (const tagDoc of tagDocs) {
         if (!Array.isArray(tagDoc.attributes)) continue
@@ -161,7 +154,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
 
       // 7. Filter product attributes to only include labels that exist in the current tags.
       //    Strip any orphaned labels (from tags that were removed).
-      const incomingAttrs: { label: string; value: any; group?: string; id?: string }[] =
+      const incomingAttrs: { label: string; value: unknown; group?: string; id?: string }[] =
         Array.isArray(data.attributes) ? data.attributes : []
 
       const filteredAttrs = incomingAttrs

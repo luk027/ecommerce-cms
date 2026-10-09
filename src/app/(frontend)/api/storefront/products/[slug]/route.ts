@@ -37,7 +37,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ slug: s
     const shaped = shapeDetailProduct(doc)
 
     return NextResponse.json(shaped)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch product' }, { status: 500 })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch product' },
+      { status: 500 },
+    )
   }
 }
