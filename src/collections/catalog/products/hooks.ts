@@ -20,7 +20,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
         data.createdBy = req.user.id
       }
 
-      // Load the linked brand once: used for the ownership check and currency inheritance
+      // Load the linked brand once: used for the ownership check, category and currency
       const brandId = relationId(data.brand !== undefined ? data.brand : originalDoc?.brand)
       const brandDoc = brandId
         ? await req.payload.findByID({
@@ -48,7 +48,11 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
         data.slug = slugify(data.title)
       }
 
-      // 2. Import currency from linked Brand
+      // 2. Category and currency come from the brand
+      if (brandDoc?.category) {
+        data.category = relationId(brandDoc.category)
+      }
+
       if (brandDoc?.currency) {
         data.currency = brandDoc.currency
       }

@@ -6,16 +6,16 @@ export const usersFields: CollectionConfig['fields'] = [
     name: 'role',
     type: 'select',
     required: true,
-    defaultValue: 'user',
+    defaultValue: 'seller',
     options: [
       { label: 'Admin', value: 'admin' },
-      { label: 'User', value: 'user' },
+      { label: 'Seller', value: 'seller' },
     ],
     access: {
       update: isAdminField,
     },
     admin: {
-      description: 'Admin has full access; User has access only to their own brands & products.',
+      description: 'Admin has full access; Seller has access only to their own brands & products.',
     },
   },
 ]

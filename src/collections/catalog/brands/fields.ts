@@ -10,6 +10,18 @@ export const brandsFields: CollectionConfig['fields'] = [
     maxLength: 80,
   },
   {
+    name: 'category',
+    type: 'relationship',
+    relationTo: 'categories',
+    required: true,
+    hasMany: false,
+    index: true,
+    admin: {
+      description:
+        "Every product in this brand belongs to this category and uses its tags. Can't be changed once the brand has products.",
+    },
+  },
+  {
     name: 'details',
     type: 'textarea',
     admin: {

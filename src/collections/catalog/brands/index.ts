@@ -8,7 +8,7 @@ export const Brands: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     group: 'Catalog',
-    defaultColumns: ['name', 'currency', 'owner', 'createdAt'],
+    defaultColumns: ['name', 'category', 'currency', 'owner', 'createdAt'],
   },
   access: {
     read: isAdminOrOwner(),

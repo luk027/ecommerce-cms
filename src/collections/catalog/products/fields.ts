@@ -45,24 +45,26 @@ export const productsFields: CollectionConfig['fields'] = [
     },
   },
   {
+    // Copied from the brand on save (see hooks), kept here so products can be filtered by category.
     name: 'category',
     type: 'relationship',
     relationTo: 'categories',
-    required: true,
     hasMany: false,
     index: true,
     admin: {
-      description: 'Category this product belongs to.',
+      readOnly: true,
+      description: "Set automatically from the brand's category.",
     },
   },
   {
     name: 'brand',
     type: 'relationship',
     relationTo: 'brands',
+    required: true,
     hasMany: false,
     index: true,
     admin: {
-      description: 'Brand this product belongs to.',
+      description: "Brand this product belongs to. The product takes the brand's category.",
     },
     filterOptions: ({ req }) => {
       if (!req.user) return false
@@ -161,17 +163,21 @@ export const productsFields: CollectionConfig['fields'] = [
     hasMany: true,
     index: true,
     admin: {
-      description: 'Only tags matching the selected category can be chosen.',
+      description: "Only tags in the brand's category can be chosen.",
     },
-    filterOptions: ({ siblingData, data }) => {
-      const catId =
-        relationId(data?.category) || relationId((siblingData as Partial<Product>)?.category)
-      if (!catId) return false
-      return {
-        category: {
-          equals: catId,
-        },
-      }
+    filterOptions: async ({ siblingData, data, req }) => {
+      const brandId =
+        relationId(data?.brand) || relationId((siblingData as Partial<Product>)?.brand)
+      if (!brandId) return false
+      const brand = await req.payload.findByID({
+        collection: 'brands',
+        id: brandId,
+        depth: 0,
+        disableErrors: true,
+        req,
+      })
+      const categoryId = relationId(brand?.category)
+      return categoryId ? { category: { equals: categoryId } } : false
     },
   },
   {

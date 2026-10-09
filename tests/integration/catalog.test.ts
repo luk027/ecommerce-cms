@@ -14,6 +14,10 @@ describe('Catalog Integration Tests', () => {
   let tagAId: string
   let tagBId: string
   let tagA2Id: string
+  // Products take their category from their brand, so each test category gets a brand.
+  let sellerId: string
+  let brandAId: string
+  let brandBId: string
 
   beforeAll(async () => {
     const payloadConfig = await config
@@ -70,6 +74,38 @@ describe('Catalog Integration Tests', () => {
       },
     })
     tagA2Id = String(tagA2.id)
+
+    const seller = await payload.create({
+      collection: 'users',
+      data: {
+        email: `catalog_seller_${testId}@example.com`,
+        password: 'password123',
+        role: 'seller',
+      },
+    })
+    sellerId = String(seller.id)
+
+    const brandA = await payload.create({
+      collection: 'brands',
+      data: {
+        name: `Test Brand A ${testId}`,
+        category: categoryAId,
+        currency: 'INR',
+        owner: sellerId,
+      },
+    })
+    brandAId = String(brandA.id)
+
+    const brandB = await payload.create({
+      collection: 'brands',
+      data: {
+        name: `Test Brand B ${testId}`,
+        category: categoryBId,
+        currency: 'INR',
+        owner: sellerId,
+      },
+    })
+    brandBId = String(brandB.id)
   })
 
   afterAll(async () => {
@@ -79,6 +115,11 @@ describe('Catalog Integration Tests', () => {
         collection: 'products',
         where: { sku: { contains: testId } },
       })
+      await payload.delete({
+        collection: 'brands',
+        where: { name: { contains: testId } },
+      })
+      await payload.delete({ collection: 'users', id: sellerId })
       await payload.delete({
         collection: 'tags',
         where: { name: { contains: testId } },
@@ -271,7 +312,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Draft Product ${testId}`,
           sku: `DRAFT-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           status: 'draft',
         },
       })
@@ -281,14 +322,14 @@ describe('Catalog Integration Tests', () => {
       expect(draft.slug).toBe(`draft-product-${testId}`)
     })
 
-    it('rejects product in Category A with a tag belonging only to Category B', async () => {
+    it('rejects a product whose brand is in Category A with a tag from Category B', async () => {
       await expect(
         payload.create({
           collection: 'products',
           data: {
             title: `Mismatch Tag Product ${testId}`,
             sku: `MISMATCH-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             tags: [tagBId],
             status: 'draft',
           },
@@ -296,26 +337,26 @@ describe('Catalog Integration Tests', () => {
       ).rejects.toThrow(/do not belong to the selected category/i)
     })
 
-    it('rejects changing category if product has incompatible tags', async () => {
-      // Product created in Category A with Tag A
+    it('rejects moving a product to a brand in another category while it has incompatible tags', async () => {
+      // Product under a Category A brand, with Tag A
       const prod = await payload.create({
         collection: 'products',
         data: {
           title: `Switch Cat Product ${testId}`,
           sku: `SWITCH-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [tagAId],
           status: 'draft',
         },
       })
 
-      // Attempt to change category to Category B while holding Tag A
+      // Moving it to the Category B brand would change its category while holding Tag A
       await expect(
         payload.update({
           collection: 'products',
           id: prod.id,
           data: {
-            category: categoryBId,
+            brand: brandBId,
           },
         }),
       ).rejects.toThrow(/do not belong to the selected category/i)
@@ -328,7 +369,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             title: `Active Without Fields ${testId}`,
             sku: `ACTIVE-FAIL-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             status: 'active',
           },
         }),
@@ -341,7 +382,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Currency Product ${testId}`,
           sku: `CURR-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           status: 'draft',
         },
       })
@@ -355,7 +396,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Discount Product ${testId}`,
           sku: `DISC-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           status: 'draft',
           sellingPrice: 80,
           mrp: 100,
@@ -371,7 +412,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Attr Product ${testId}`,
           sku: `ATTR-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [tagAId],
           status: 'draft',
           attributes: [
@@ -405,7 +446,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             title: `BadNum Product ${testId}`,
             sku: `BADNUM-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             tags: [String(numTag.id)],
             status: 'draft',
             attributes: [{ label: 'Weight', value: 'not-a-number' }],
@@ -432,7 +473,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Dupe Attr Product ${testId}`,
           sku: `DUPE-ATTR-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [tagA2Id, String(dupeTag.id)],
           status: 'draft',
           attributes: [
@@ -457,7 +498,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             title: `Empty Attr Product ${testId}`,
             sku: `EMPTY-ATTR-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             tags: [tagAId],
             status: 'draft',
             attributes: [
@@ -491,7 +532,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Bool Product ${testId}`,
           sku: `BOOL-PROD-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [String(boolTag.id)],
           status: 'draft',
           attributes: [{ label: 'Waterproof', value: 'true' }],
@@ -510,7 +551,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             title: `Bad Bool Product ${testId}`,
             sku: `BAD-BOOL-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             tags: [String(boolTag.id)],
             status: 'draft',
             attributes: [{ label: 'Waterproof', value: 'invalid-bool' }],
@@ -550,7 +591,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Grouped Attr Product ${testId}`,
           sku: `GROUPED-PROD-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [String(groupTag.id)],
           status: 'draft',
           attributes: [
@@ -574,7 +615,7 @@ describe('Catalog Integration Tests', () => {
           data: {
             title: `Missing Group Child ${testId}`,
             sku: `MISS-CHILD-${testId}`,
-            category: categoryAId,
+            brand: brandAId,
             tags: [String(groupTag.id)],
             status: 'draft',
             attributes: [
@@ -608,7 +649,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Prod Unlink Test ${testId}`,
           sku: `UNLINK-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [tagAId, String(tempTag.id)],
           status: 'draft',
         },
@@ -650,7 +691,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Prod A Move ${testId}`,
           sku: `MOVE-A-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [String(movableTag.id)],
           status: 'draft',
         },
@@ -799,7 +840,7 @@ describe('Catalog Integration Tests', () => {
         data: {
           title: `Semi-conductor Complex ${testId}`,
           sku: `SMC-01-${testId}`,
-          category: categoryAId,
+          brand: brandAId,
           tags: [String(tagMulti.id)],
           status: 'draft',
           attributes: [

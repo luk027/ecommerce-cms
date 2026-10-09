@@ -1,8 +1,22 @@
-import { APIError, type CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
+import { relationId } from '@/utilities/relationId'
+
+async function countProducts(req: PayloadRequest, brandId: string) {
+  const { totalDocs } = await req.payload.count({
+    collection: 'products',
+    req,
+    where: {
+      brand: {
+        equals: brandId,
+      },
+    },
+  })
+  return totalDocs
+}
 
 export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
   beforeValidate: [
-    async ({ data, req, operation }) => {
+    async ({ data, req, operation, originalDoc }) => {
       if (!data) return data
 
       if (typeof data.name === 'string') {
@@ -15,25 +29,31 @@ export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
         }
       }
 
+      // Products take their category from the brand, so it's fixed once the brand has products.
+      if (operation === 'update' && originalDoc && data.category !== undefined) {
+        const from = relationId(originalDoc.category)
+        const to = relationId(data.category)
+        if (from && from !== to) {
+          const productCount = await countProducts(req, String(originalDoc.id))
+          if (productCount > 0) {
+            throw new APIError(
+              `Cannot change the category: this brand has ${productCount} product(s).`,
+              400,
+            )
+          }
+        }
+      }
+
       return data
     },
   ],
   beforeDelete: [
     async ({ req, id }) => {
-      const brandId = String(id)
-      const productsCount = await req.payload.count({
-        collection: 'products',
-        req,
-        where: {
-          brand: {
-            equals: brandId,
-          },
-        },
-      })
+      const productCount = await countProducts(req, String(id))
 
-      if (productsCount.totalDocs > 0) {
+      if (productCount > 0) {
         throw new APIError(
-          'Cannot delete brand: it is referenced by ' + productsCount.totalDocs + ' product(s).',
+          'Cannot delete brand: it is referenced by ' + productCount + ' product(s).',
           400,
         )
       }

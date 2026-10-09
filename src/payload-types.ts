@@ -130,9 +130,9 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   /**
-   * Admin has full access; User has access only to their own brands & products.
+   * Admin has full access; Seller has access only to their own brands & products.
    */
-  role: 'admin' | 'user';
+  role: 'admin' | 'seller';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -160,6 +160,10 @@ export interface User {
 export interface Brand {
   id: string;
   name: string;
+  /**
+   * Every product in this brand belongs to this category and uses its tags. Can't be changed once the brand has products.
+   */
+  category: string | Category;
   /**
    * Details and description for this brand.
    */
@@ -279,13 +283,13 @@ export interface Product {
   sku: string;
   status: 'draft' | 'active' | 'archived';
   /**
-   * Category this product belongs to.
+   * Set automatically from the brand's category.
    */
-  category: string | Category;
+  category?: (string | null) | Category;
   /**
-   * Brand this product belongs to.
+   * Brand this product belongs to. The product takes the brand's category.
    */
-  brand?: (string | null) | Brand;
+  brand: string | Brand;
   createdBy?: (string | null) | User;
   sellingPrice?: number | null;
   mrp?: number | null;
@@ -297,7 +301,7 @@ export interface Product {
   stockStatus?: ('in_stock' | 'out_of_stock' | 'preorder' | 'discontinued') | null;
   stockQuantity?: number | null;
   /**
-   * Only tags matching the selected category can be chosen.
+   * Only tags in the brand's category can be chosen.
    */
   tags?: (string | Tag)[] | null;
   /**
@@ -431,6 +435,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface BrandsSelect<T extends boolean = true> {
   name?: T;
+  category?: T;
   details?: T;
   currency?: T;
   owner?: T;

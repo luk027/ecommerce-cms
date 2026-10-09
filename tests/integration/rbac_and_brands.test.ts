@@ -39,7 +39,7 @@ describe('RBAC and Brands Integration Tests', () => {
       data: {
         email: `bob_${testId}@example.com`,
         password: 'password123',
-        role: 'user',
+        role: 'seller',
       },
     })
 
@@ -49,7 +49,7 @@ describe('RBAC and Brands Integration Tests', () => {
       data: {
         email: `charlie_${testId}@example.com`,
         password: 'password123',
-        role: 'user',
+        role: 'seller',
       },
     })
 
@@ -121,6 +121,7 @@ describe('RBAC and Brands Integration Tests', () => {
         overrideAccess: false,
         data: {
           name: `Bob Brand INR ${testId}`,
+          category: testCategory.id,
           details: 'Bob electronic gadgets',
           currency: 'INR',
         },
@@ -139,6 +140,7 @@ describe('RBAC and Brands Integration Tests', () => {
         overrideAccess: false,
         data: {
           name: `Bob Second Brand ${testId}`,
+          category: testCategory.id,
           details: 'Bob accessories',
           currency: 'INR',
         },
@@ -156,6 +158,7 @@ describe('RBAC and Brands Integration Tests', () => {
         overrideAccess: false,
         data: {
           name: `Charlie Brand ${testId}`,
+          category: testCategory.id,
           details: 'Charlie apparel',
           currency: 'INR',
         },
@@ -310,7 +313,6 @@ describe('RBAC and Brands Integration Tests', () => {
         data: {
           title: `Bob INR Product ${testId}`,
           sku: `SKU-BOB-INR-${testId}`,
-          category: testCategory.id,
           brand: brandBobINR.id,
           sellingPrice: 1999,
           mrp: 2499,
@@ -329,7 +331,6 @@ describe('RBAC and Brands Integration Tests', () => {
         data: {
           title: `Bob Second Product ${testId}`,
           sku: `SKU-BOB-SEC-${testId}`,
-          category: testCategory.id,
           brand: brandBobSecond.id,
           sellingPrice: 499,
           mrp: 599,
@@ -349,7 +350,6 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             title: `Spoofed Product ${testId}`,
             sku: `SKU-SPOOF-${testId}`,
-            category: testCategory.id,
             brand: brandCharlie.id,
             sellingPrice: 100,
             status: 'draft',
@@ -366,7 +366,6 @@ describe('RBAC and Brands Integration Tests', () => {
         data: {
           title: `Charlie Product ${testId}`,
           sku: `SKU-CHARLIE-${testId}`,
-          category: testCategory.id,
           brand: brandCharlie.id,
           sellingPrice: 899,
           status: 'draft',
@@ -448,7 +447,7 @@ describe('RBAC and Brands Integration Tests', () => {
         data: {
           title: `CreatedBy Spoof ${testId}`,
           sku: `SKU-CB-SPOOF-${testId}`,
-          category: testCategory.id,
+          brand: brandBobINR.id,
           createdBy: userCharlie.id,
           status: 'draft',
         },
@@ -467,7 +466,6 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             title: `Status Check ${testId}`,
             sku: `SKU-STATUS-${testId}`,
-            category: testCategory.id,
             brand: brandCharlie.id,
             status: 'draft',
           },
@@ -484,7 +482,6 @@ describe('RBAC and Brands Integration Tests', () => {
           data: {
             title: `Publish No Attrs ${testId}`,
             sku: `SKU-PUB-NOATTR-${testId}`,
-            category: testCategory.id,
             brand: brandBobINR.id,
             tags: [testTag.id],
             sellingPrice: 100,
@@ -495,6 +492,41 @@ describe('RBAC and Brands Integration Tests', () => {
       ).rejects.toThrow(/Attribute "Color" value cannot be empty/)
     })
 
+    it("takes the product's category from its brand", async () => {
+      const prod = await payload.create({
+        collection: 'products',
+        user: userBob,
+        overrideAccess: false,
+        data: {
+          title: `Brand Category ${testId}`,
+          sku: `SKU-BRAND-CAT-${testId}`,
+          brand: brandBobINR.id,
+          status: 'draft',
+        },
+      })
+      expect(relationId(prod.category)).toBe(String(testCategory.id))
+    })
+
+    it("blocks changing a brand's category once it has products", async () => {
+      const otherCategory = await payload.create({
+        collection: 'categories',
+        data: { name: `RBAC Other Category ${testId}` },
+      })
+      try {
+        await expect(
+          payload.update({
+            collection: 'brands',
+            id: brandBobINR.id,
+            user: userBob,
+            overrideAccess: false,
+            data: { category: otherCategory.id },
+          }),
+        ).rejects.toThrow(/Cannot change the category/)
+      } finally {
+        await payload.delete({ collection: 'categories', id: otherCategory.id })
+      }
+    })
+
     it('keeps the slug immutable once the product is published', async () => {
       const prod = await payload.create({
         collection: 'products',
@@ -503,7 +535,6 @@ describe('RBAC and Brands Integration Tests', () => {
         data: {
           title: `Published Slug ${testId}`,
           sku: `SKU-PUB-SLUG-${testId}`,
-          category: testCategory.id,
           brand: brandBobINR.id,
           tags: [testTag.id],
           attributes: [{ label: 'Color', value: 'Red' }],
