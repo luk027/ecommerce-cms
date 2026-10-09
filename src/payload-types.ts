@@ -168,10 +168,20 @@ export interface Brand {
    * Details and description for this brand.
    */
   details?: string | null;
+  website?: string | null;
+  email?: string | null;
+  phone?: string | null;
   /**
    * Currency used for all products under this brand.
    */
   currency: 'INR';
+  /**
+   * New brands start with nothing verified.
+   */
+  verified?: {
+    email?: boolean | null;
+    phone?: boolean | null;
+  };
   /**
    * Owner user of this brand. Automatically assigned.
    */
@@ -437,7 +447,16 @@ export interface BrandsSelect<T extends boolean = true> {
   name?: T;
   category?: T;
   details?: T;
+  website?: T;
+  email?: T;
+  phone?: T;
   currency?: T;
+  verified?:
+    | T
+    | {
+        email?: T;
+        phone?: T;
+      };
   owner?: T;
   updatedAt?: T;
   createdAt?: T;

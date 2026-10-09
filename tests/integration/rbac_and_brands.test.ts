@@ -131,6 +131,18 @@ describe('RBAC and Brands Integration Tests', () => {
       const ownerId = relationId(brandBobINR.owner)
       expect(ownerId).toBe(String(userBob.id))
       expect(brandBobINR.currency).toBe('INR')
+      expect(brandBobINR.verified).toEqual({ email: false, phone: false })
+    })
+
+    it('a seller cannot mark their own brand as verified', async () => {
+      const updated = await payload.update({
+        collection: 'brands',
+        id: brandBobINR.id,
+        user: userBob,
+        overrideAccess: false,
+        data: { verified: { email: true, phone: true } },
+      })
+      expect(updated.verified).toEqual({ email: false, phone: false })
     })
 
     it('user can create multiple brands (all using INR currency)', async () => {
