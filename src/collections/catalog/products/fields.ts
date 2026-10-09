@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdminField } from '@/access/isAdmin'
 
 export const productsFields: CollectionConfig['fields'] = [
   {
@@ -75,6 +76,9 @@ export const productsFields: CollectionConfig['fields'] = [
     name: 'createdBy',
     type: 'relationship',
     relationTo: 'users',
+    access: {
+      update: isAdminField,
+    },
     admin: {
       readOnly: true,
       position: 'sidebar',

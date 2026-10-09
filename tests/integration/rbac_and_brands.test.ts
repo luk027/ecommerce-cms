@@ -439,4 +439,93 @@ describe('RBAC and Brands Integration Tests', () => {
       ).rejects.toThrow()
     })
   })
+
+  describe('Product hook guards', () => {
+    it('forces createdBy to the creating non-admin user', async () => {
+      const prod = await payload.create({
+        collection: 'products',
+        user: userBob,
+        overrideAccess: false,
+        data: {
+          title: `CreatedBy Spoof ${testId}`,
+          sku: `SKU-CB-SPOOF-${testId}`,
+          category: testCategory.id,
+          createdBy: userCharlie.id,
+          status: 'draft',
+        },
+      })
+
+      const createdById = typeof prod.createdBy === 'object' ? prod.createdBy?.id : prod.createdBy
+      expect(String(createdById)).toBe(String(userBob.id))
+    })
+
+    it('returns hook validation errors as public 400 errors', async () => {
+      await expect(
+        payload.create({
+          collection: 'products',
+          user: userBob,
+          overrideAccess: false,
+          data: {
+            title: `Status Check ${testId}`,
+            sku: `SKU-STATUS-${testId}`,
+            category: testCategory.id,
+            brand: brandCharlie.id,
+            status: 'draft',
+          },
+        }),
+      ).rejects.toMatchObject({ status: 400 })
+    })
+
+    it('requires all tag attribute values when publishing', async () => {
+      await expect(
+        payload.create({
+          collection: 'products',
+          user: userBob,
+          overrideAccess: false,
+          data: {
+            title: `Publish No Attrs ${testId}`,
+            sku: `SKU-PUB-NOATTR-${testId}`,
+            category: testCategory.id,
+            brand: brandBobINR.id,
+            tags: [testTag.id],
+            sellingPrice: 100,
+            stockStatus: 'in_stock',
+            status: 'active',
+          },
+        }),
+      ).rejects.toThrow(/Attribute "Color" value cannot be empty/)
+    })
+
+    it('keeps the slug immutable once the product is published', async () => {
+      const prod = await payload.create({
+        collection: 'products',
+        user: userBob,
+        overrideAccess: false,
+        data: {
+          title: `Published Slug ${testId}`,
+          sku: `SKU-PUB-SLUG-${testId}`,
+          category: testCategory.id,
+          brand: brandBobINR.id,
+          tags: [testTag.id],
+          attributes: [{ label: 'Color', value: 'Red' }],
+          sellingPrice: 100,
+          stockStatus: 'in_stock',
+          status: 'active',
+        },
+      })
+      expect(prod.slug).toBe(`published-slug-${testId}`)
+
+      const updated = await payload.update({
+        collection: 'products',
+        id: prod.id,
+        user: userBob,
+        overrideAccess: false,
+        data: {
+          title: `Renamed Slug ${testId}`,
+          slug: 'hijacked-slug',
+        },
+      })
+      expect(updated.slug).toBe(`published-slug-${testId}`)
+    })
+  })
 })

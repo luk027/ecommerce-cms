@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 
 export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
   beforeValidate: [
@@ -6,10 +6,10 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
       if (data?.name && typeof data.name === 'string') {
         data.name = data.name.trim()
         if (data.name.length === 0) {
-          throw new Error('Category name cannot be empty.')
+          throw new APIError('Category name cannot be empty.', 400)
         }
         if (data.name.length > 60) {
-          throw new Error('Category name cannot exceed 60 characters.')
+          throw new APIError('Category name cannot exceed 60 characters.', 400)
         }
 
         // Case-insensitive uniqueness check
@@ -20,7 +20,9 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
               like: data.name,
             },
           },
-          limit: 10,
+          pagination: false,
+          depth: 0,
+          req,
         })
 
         const docId = originalDoc?.id || (data as any)?.id
@@ -31,7 +33,7 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
         )
 
         if (conflict) {
-          throw new Error(`Category with name "${data.name}" already exists.`)
+          throw new APIError(`Category with name "${data.name}" already exists.`, 400)
         }
       }
       return data
@@ -44,6 +46,7 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
       // 1. Check if any product references this category
       const productsCount = await req.payload.count({
         collection: 'products',
+        req,
         where: {
           category: {
             equals: categoryId,
@@ -52,14 +55,16 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
       })
 
       if (productsCount.totalDocs > 0) {
-        throw new Error(
+        throw new APIError(
           `Cannot delete category: it is referenced by ${productsCount.totalDocs} product(s).`,
+          400,
         )
       }
 
       // 2. Check if any tag references this category
       const tagsCount = await req.payload.count({
         collection: 'tags',
+        req,
         where: {
           category: {
             equals: categoryId,
@@ -68,8 +73,9 @@ export const categoriesHooks: NonNullable<CollectionConfig['hooks']> = {
       })
 
       if (tagsCount.totalDocs > 0) {
-        throw new Error(
+        throw new APIError(
           `Cannot delete category: it is referenced by ${tagsCount.totalDocs} tag(s).`,
+          400,
         )
       }
     },

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 import { slugify, normalizeLabel } from '@/utilities/normalize'
 import { validateProductTags } from '@/utilities/validateTags'
 import { computeDiscount } from '@/utilities/computeDiscount'
@@ -8,60 +8,48 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
     async ({ data, req, originalDoc, operation }) => {
       if (!data) return data
 
-      // Set createdBy if user is logged in on create
-      if (req.user && operation === 'create' && !data.createdBy) {
+      const isAdminUser = (req.user as any)?.role === 'admin'
+
+      // Set createdBy on create. Only admins may assign a product to another user.
+      if (req.user && operation === 'create' && (!isAdminUser || !data.createdBy)) {
         data.createdBy = req.user.id
       }
 
-      // Validate brand ownership for non-admin users
-      if (req.user && (req.user as any).role !== 'admin' && data.brand) {
-        try {
-          const brandId =
-            typeof data.brand === 'object' ? data.brand.id || data.brand._id : data.brand
-          const brandDoc = await req.payload.findByID({
+      // Load the linked brand once: used for the ownership check and currency inheritance
+      const currentBrand = data.brand !== undefined ? data.brand : originalDoc?.brand
+      const brandDoc = currentBrand
+        ? await req.payload.findByID({
             collection: 'brands',
-            id: brandId,
+            id:
+              typeof currentBrand === 'object' ? currentBrand.id || currentBrand._id : currentBrand,
             depth: 0,
+            disableErrors: true,
+            req,
           })
-          const brandOwnerId =
-            brandDoc?.owner && typeof brandDoc.owner === 'object'
-              ? (brandDoc.owner as any).id
-              : brandDoc?.owner
+        : null
 
-          if (brandOwnerId && String(brandOwnerId) !== String(req.user.id)) {
-            throw new Error('You can only assign products to your own brands.')
-          }
-        } catch (err: any) {
-          if (err.message === 'You can only assign products to your own brands.') {
-            throw err
-          }
+      // Validate brand ownership for non-admin users
+      if (req.user && !isAdminUser && brandDoc) {
+        const brandOwnerId =
+          brandDoc.owner && typeof brandDoc.owner === 'object'
+            ? (brandDoc.owner as any).id
+            : brandDoc.owner
+
+        if (brandOwnerId && String(brandOwnerId) !== String(req.user.id)) {
+          throw new APIError('You can only assign products to your own brands.', 400)
         }
       }
 
-      // 1. Slug auto-generation
-      if (data.title && typeof data.title === 'string') {
-        if (!data.slug || (!originalDoc?.slug && originalDoc?.status !== 'active')) {
-          data.slug = slugify(data.title)
-        }
+      // 1. Slug auto-generation (immutable once the product has been published)
+      if (originalDoc?.status === 'active' && originalDoc.slug) {
+        data.slug = originalDoc.slug
+      } else if (data.title && typeof data.title === 'string' && !data.slug) {
+        data.slug = slugify(data.title)
       }
 
       // 2. Import currency from linked Brand
-      const currentBrand = data.brand !== undefined ? data.brand : originalDoc?.brand
-      if (currentBrand) {
-        try {
-          const brandId =
-            typeof currentBrand === 'object' ? currentBrand.id || currentBrand._id : currentBrand
-          const brandDoc = await req.payload.findByID({
-            collection: 'brands',
-            id: brandId,
-            depth: 0,
-          })
-          if (brandDoc?.currency) {
-            data.currency = brandDoc.currency
-          }
-        } catch {
-          // fallback
-        }
+      if (brandDoc?.currency) {
+        data.currency = brandDoc.currency
       }
 
       if (!data.currency) {
@@ -97,7 +85,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       let tagDocs: any[] = []
       if (tagIds.length > 0) {
         if (!categoryId) {
-          throw new Error('A category must be selected before attaching tags.')
+          throw new APIError('A category must be selected before attaching tags.', 400)
         }
 
         const tagDocsRes = await req.payload.find({
@@ -109,13 +97,15 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
           },
           limit: tagIds.length + 10,
           depth: 0,
+          req,
         })
         tagDocs = tagDocsRes.docs
 
         const offendingTags = validateProductTags(tagDocs, categoryId)
         if (offendingTags.length > 0) {
-          throw new Error(
+          throw new APIError(
             `The following tags do not belong to the selected category: ${offendingTags.join(', ')}`,
+            400,
           )
         }
       }
@@ -199,8 +189,9 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
           }
         })
 
-      // 8. If attributes are provided for tags with attribute definitions, all defined attributes must have non-empty values
-      if (validLabelMap.size > 0 && filteredAttrs.length > 0) {
+      // 8. All tag-defined attributes must have values when any are provided, and always on publish
+      const targetStatus = data.status || originalDoc?.status || 'draft'
+      if (validLabelMap.size > 0 && (filteredAttrs.length > 0 || targetStatus === 'active')) {
         for (const [key, tagAttr] of validLabelMap.entries()) {
           const userAttr = filteredAttrs.find((a) => {
             const aLabel = normalizeLabel((a.label || '').trim())
@@ -216,7 +207,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
             const displayLabel = tagAttr.group
               ? `${tagAttr.group} > ${tagAttr.label}`
               : tagAttr.label
-            throw new Error(`Attribute "${displayLabel}" value cannot be empty.`)
+            throw new APIError(`Attribute "${displayLabel}" value cannot be empty.`, 400)
           }
         }
       }
@@ -234,7 +225,7 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
         const rawVal = String(attr.value ?? '').trim()
         const displayLabel = tagAttr.group ? `${tagAttr.group} > ${tagAttr.label}` : tagAttr.label
         if (!rawVal) {
-          throw new Error(`Attribute "${displayLabel}" value cannot be empty.`)
+          throw new APIError(`Attribute "${displayLabel}" value cannot be empty.`, 400)
         }
 
         const { validation } = tagAttr
@@ -250,34 +241,38 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
                 : null
 
           if (!boolNorm) {
-            throw new Error(`Attribute "${displayLabel}" must be either "true" or "false".`)
+            throw new APIError(`Attribute "${displayLabel}" must be either "true" or "false".`, 400)
           }
           attr.value = boolNorm
         } else if (valType === 'number') {
           const numVal = Number(rawVal)
           if (isNaN(numVal)) {
-            throw new Error(`Attribute "${displayLabel}" must be a number.`)
+            throw new APIError(`Attribute "${displayLabel}" must be a number.`, 400)
           }
           if (typeof validation?.min === 'number' && numVal < validation.min) {
-            throw new Error(
+            throw new APIError(
               `Attribute "${displayLabel}" value (${numVal}) is below the minimum allowed (${validation.min}).`,
+              400,
             )
           }
           if (typeof validation?.max === 'number' && numVal > validation.max) {
-            throw new Error(
+            throw new APIError(
               `Attribute "${displayLabel}" value (${numVal}) exceeds the maximum allowed (${validation.max}).`,
+              400,
             )
           }
         } else {
           // text validation
           if (typeof validation?.min === 'number' && rawVal.length < validation.min) {
-            throw new Error(
+            throw new APIError(
               `Attribute "${displayLabel}" value must be at least ${validation.min} characters.`,
+              400,
             )
           }
           if (typeof validation?.max === 'number' && rawVal.length > validation.max) {
-            throw new Error(
+            throw new APIError(
               `Attribute "${displayLabel}" value must not exceed ${validation.max} characters.`,
+              400,
             )
           }
         }
@@ -311,7 +306,6 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
       data.attributes = deduplicatedAttrs
 
       // 10. Publish Gate (when status is active)
-      const targetStatus = data.status || originalDoc?.status || 'draft'
       if (targetStatus === 'active') {
         const missingFields: string[] = []
 
@@ -333,8 +327,9 @@ export const productsHooks: NonNullable<CollectionConfig['hooks']> = {
         if (!stockStatus) missingFields.push('stockStatus')
 
         if (missingFields.length > 0) {
-          throw new Error(
+          throw new APIError(
             `Cannot publish product. The following required fields are missing: ${missingFields.join(', ')}`,
+            400,
           )
         }
       }

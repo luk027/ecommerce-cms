@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 
 export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
   beforeValidate: [
@@ -23,6 +23,7 @@ export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
       const brandId = String(id)
       const productsCount = await req.payload.count({
         collection: 'products',
+        req,
         where: {
           brand: {
             equals: brandId,
@@ -31,8 +32,9 @@ export const brandsHooks: NonNullable<CollectionConfig['hooks']> = {
       })
 
       if (productsCount.totalDocs > 0) {
-        throw new Error(
+        throw new APIError(
           'Cannot delete brand: it is referenced by ' + productsCount.totalDocs + ' product(s).',
+          400,
         )
       }
     },

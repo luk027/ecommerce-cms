@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 import { normalizeLabel } from '@/utilities/normalize'
 import { unlinkTagFromProducts } from '@/utilities/unlinkTag'
 
@@ -10,10 +10,10 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
       if (data.name && typeof data.name === 'string') {
         data.name = data.name.trim()
         if (data.name.length === 0) {
-          throw new Error('Tag name cannot be empty.')
+          throw new APIError('Tag name cannot be empty.', 400)
         }
         if (data.name.length > 60) {
-          throw new Error('Tag name cannot exceed 60 characters.')
+          throw new APIError('Tag name cannot exceed 60 characters.', 400)
         }
 
         // Case-insensitive uniqueness check
@@ -24,7 +24,9 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
               like: data.name,
             },
           },
-          limit: 10,
+          pagination: false,
+          depth: 0,
+          req,
         })
 
         const docId = originalDoc?.id || (data as any)?.id
@@ -35,7 +37,7 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
         )
 
         if (conflict) {
-          throw new Error(`Tag with name "${data.name}" already exists.`)
+          throw new APIError(`Tag with name "${data.name}" already exists.`, 400)
         }
       }
 
@@ -52,7 +54,7 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
       const catVal = data.category !== undefined ? data.category : originalDoc?.category
       const catId = typeof catVal === 'object' && catVal ? catVal.id || catVal._id : catVal
       if (!catId) {
-        throw new Error('A tag must be associated with a category.')
+        throw new APIError('A tag must be associated with a category.', 400)
       }
 
       // Validate attribute labels are unique within this tag after normalization
@@ -66,14 +68,17 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
           if (attr.type === 'group' || (attr.groupName && Array.isArray(attr.items))) {
             const groupName = (attr.groupName || '').trim()
             if (!groupName) {
-              throw new Error(`Attribute group at row ${i + 1} is missing a group name.`)
+              throw new APIError(`Attribute group at row ${i + 1} is missing a group name.`, 400)
             }
             if (groupName.length > 60) {
-              throw new Error(`Attribute group name "${groupName}" exceeds 60 characters.`)
+              throw new APIError(`Attribute group name "${groupName}" exceeds 60 characters.`, 400)
             }
 
             if (!Array.isArray(attr.items) || attr.items.length === 0) {
-              throw new Error(`Attribute group "${groupName}" must contain at least one attribute.`)
+              throw new APIError(
+                `Attribute group "${groupName}" must contain at least one attribute.`,
+                400,
+              )
             }
 
             for (let j = 0; j < attr.items.length; j++) {
@@ -82,13 +87,15 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
 
               const label = (item.label || '').trim()
               if (!label) {
-                throw new Error(
+                throw new APIError(
                   `Attribute in group "${groupName}" (row ${j + 1}) is missing a label.`,
+                  400,
                 )
               }
               if (label.length > 60) {
-                throw new Error(
+                throw new APIError(
                   `Attribute label "${label}" in group "${groupName}" exceeds 60 characters.`,
+                  400,
                 )
               }
 
@@ -100,8 +107,9 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
               ) {
                 if (typeof validation.min === 'number' && typeof validation.max === 'number') {
                   if (validation.min > validation.max) {
-                    throw new Error(
+                    throw new APIError(
                       `Attribute "${label}" in group "${groupName}": min (${validation.min}) cannot be greater than max (${validation.max}).`,
+                      400,
                     )
                   }
                 }
@@ -109,7 +117,10 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
 
               const key = `${normalizeLabel(groupName)}::${normalizeLabel(label)}`
               if (seenKeys.has(key)) {
-                throw new Error(`Duplicate attribute label "${label}" in group "${groupName}".`)
+                throw new APIError(
+                  `Duplicate attribute label "${label}" in group "${groupName}".`,
+                  400,
+                )
               }
               seenKeys.add(key)
             }
@@ -117,10 +128,10 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
             const label = (attr.label || '').trim()
 
             if (!label) {
-              throw new Error(`Attribute row ${i + 1} is missing a label.`)
+              throw new APIError(`Attribute row ${i + 1} is missing a label.`, 400)
             }
             if (label.length > 60) {
-              throw new Error(`Attribute label "${label}" exceeds 60 characters.`)
+              throw new APIError(`Attribute label "${label}" exceeds 60 characters.`, 400)
             }
 
             // Validate validation rules if present
@@ -132,8 +143,9 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
             ) {
               if (typeof validation.min === 'number' && typeof validation.max === 'number') {
                 if (validation.min > validation.max) {
-                  throw new Error(
+                  throw new APIError(
                     `Attribute "${label}": min (${validation.min}) cannot be greater than max (${validation.max}).`,
+                    400,
                   )
                 }
               }
@@ -141,8 +153,9 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
 
             const key = normalizeLabel(label)
             if (seenKeys.has(key)) {
-              throw new Error(
+              throw new APIError(
                 `Duplicate attribute label "${label}" in tag. Labels must be unique within a tag.`,
+                400,
               )
             }
             seenKeys.add(key)
@@ -175,14 +188,14 @@ export const tagsHooks: NonNullable<CollectionConfig['hooks']> = {
           : null
 
         if (prevCat && currentCat && prevCat !== currentCat) {
-          await unlinkTagFromProducts(String(doc.id), req.payload, [prevCat])
+          await unlinkTagFromProducts(String(doc.id), req, [prevCat])
         }
       }
     },
   ],
   afterDelete: [
     async ({ id, req }) => {
-      await unlinkTagFromProducts(String(id), req.payload)
+      await unlinkTagFromProducts(String(id), req)
     },
   ],
 }

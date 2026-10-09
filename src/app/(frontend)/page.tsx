@@ -12,8 +12,8 @@ export default async function HomePage() {
   const { user } = await payload.auth({ headers })
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black px-6 py-11 font-sans text-lg leading-8 text-white sm:px-11">
-      <div className="flex grow flex-col items-center justify-center">
+    <main className="home">
+      <div className="home__content">
         <picture>
           <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
           <Image
@@ -23,19 +23,12 @@ export default async function HomePage() {
             width={65}
           />
         </picture>
-        {!user && (
-          <h1 className="my-6 text-center text-4xl leading-tight font-bold sm:my-10 sm:text-5xl lg:text-6xl">
-            Welcome to your new project.
-          </h1>
-        )}
-        {user && (
-          <h1 className="my-6 text-center text-4xl leading-tight font-bold sm:my-10 sm:text-5xl lg:text-6xl">
-            Welcome back, {user.email}
-          </h1>
-        )}
-        <div className="flex items-center gap-3">
+        <h1 className="home__title">
+          {user ? `Welcome back, ${user.email}` : 'Welcome to your new project.'}
+        </h1>
+        <div className="home__links">
           <a
-            className="rounded border border-white bg-white px-2 py-1 text-black no-underline"
+            className="button button--primary"
             href={payloadConfig.routes.admin}
             rel="noopener noreferrer"
             target="_blank"
@@ -43,7 +36,7 @@ export default async function HomePage() {
             Go to admin panel
           </a>
           <a
-            className="rounded border border-white bg-black px-2 py-1 text-white no-underline"
+            className="button button--secondary"
             href="https://payloadcms.com/docs"
             rel="noopener noreferrer"
             target="_blank"
